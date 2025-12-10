@@ -24,7 +24,7 @@ export const translations = {
 
     // Hero section translations
     "hero.badge": "Brza dostava širom Srbije",
-    "hero.title": "Kupujte namirnice online",
+    "hero.title": "Kupujte namirnice online (translation test)",
     "hero.subtitle": "Sveže, kvalitetno i uvek na vreme. Uživajte u brzoj dostavi direktno na vašu adresu.",
     "hero.cta": "Počni kupovinu",
     "hero.ctaSecondary": "Pogledaj akcije",
