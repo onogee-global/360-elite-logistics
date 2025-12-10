@@ -1,0 +1,65 @@
+# === Node ===
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.package-lock.json
+
+# === Next.js build artefacts ===
+.next/
+out/
+dist/
+build/
+
+# === V0.dev specific files ===
+.v0/
+.v0-temp/
+.v0-cache/
+.v0-gen/
+*.v0.json
+
+# Temporary AI-generated assets (if any)
+*.v0.draft.*
+*.v0.temp.*
+
+# === Environment files ===
+.env
+.env*.local
+
+# For safety — ignore any secret fallback files
+.env.backup
+*.secret
+*.key
+
+# === OS Files ===
+.DS_Store
+Thumbs.db
+
+# === Log files ===
+*.log
+logs/
+debug.log
+npm-debug.log
+
+# === Editor folders ===
+.vscode/
+.idea/
+*.swp
+
+# === Typescript ===
+*.tsbuildinfo
+
+# === Next.js serverless / turbo stuff ===
+.turbo/
+.vercel/
+
+# === Auto-generated images & cache ===
+public/generated/*
+public/temp/*
+.cache/
+.next/cache/
+
+# === Misc ===
+*.bak
+*.tmp
