@@ -1,24 +1,33 @@
-"use client"
+"use client";
 
-import Image from "next/image"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { Input } from "@/components/ui/input"
-import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, Package, Truck } from "lucide-react"
-import { useCartStore } from "@/lib/cart-store"
-import { useState } from "react"
-import { useLocale } from "@/lib/locale-context"
+import Image from "next/image";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import {
+  Minus,
+  Plus,
+  Trash2,
+  ShoppingBag,
+  ArrowLeft,
+  Package,
+  Truck,
+} from "lucide-react";
+import { useCartStore } from "@/lib/cart-store";
+import { useState } from "react";
+import { useLocale } from "@/lib/locale-context";
 
 export default function CartPage() {
-  const { items, updateQuantity, removeItem, getTotal, clearCart } = useCartStore()
-  const { locale, t } = useLocale()
-  const [promoCode, setPromoCode] = useState("")
+  const { items, updateQuantity, removeItem, getTotal, clearCart } =
+    useCartStore();
+  const { locale, t } = useLocale();
+  const [promoCode, setPromoCode] = useState("");
 
-  const subtotal = getTotal()
-  const deliveryFee = subtotal > 0 ? (subtotal >= 3000 ? 0 : 199) : 0
-  const total = subtotal + deliveryFee
+  const subtotal = getTotal();
+  const deliveryFee = subtotal > 0 ? (subtotal >= 3000 ? 0 : 199) : 0;
+  const total = subtotal + deliveryFee;
 
   if (items.length === 0) {
     return (
@@ -31,21 +40,32 @@ export default function CartPage() {
               </div>
             </div>
             <h2 className="text-3xl font-bold mb-3">{t("emptyCart")}</h2>
-            <p className="text-muted-foreground mb-8 text-lg">{t("startShopping")}</p>
-            <Button size="lg" className="h-12 px-8 text-base font-semibold shadow-lg" asChild>
+            <p className="text-muted-foreground mb-8 text-lg">
+              {t("startShopping")}
+            </p>
+            <Button
+              size="lg"
+              className="h-12 px-8 text-base font-semibold shadow-lg"
+              asChild
+            >
               <Link href="/products">{t("hero.cta")}</Link>
             </Button>
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <Button variant="ghost" size="sm" className="mb-4 hover:bg-primary/10" asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mb-4 hover:bg-primary/10"
+            asChild
+          >
             <Link href="/products">
               <ArrowLeft className="mr-2 h-4 w-4" />
               {t("cart.continueShopping")}
@@ -53,7 +73,8 @@ export default function CartPage() {
           </Button>
           <h1 className="text-4xl font-bold mb-2">{t("cart.title")}</h1>
           <p className="text-muted-foreground text-lg">
-            {items.reduce((sum, item) => sum + item.quantity, 0)} {t("cart.items")}
+            {items.reduce((sum, item) => sum + item.quantity, 0)}{" "}
+            {t("cart.items")}
           </p>
         </div>
 
@@ -65,7 +86,8 @@ export default function CartPage() {
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-bold flex items-center gap-2">
                     <Package className="h-5 w-5 text-primary" />
-                    {t("cart.items")} ({items.reduce((sum, item) => sum + item.quantity, 0)})
+                    {t("cart.items")} (
+                    {items.reduce((sum, item) => sum + item.quantity, 0)})
                   </h2>
                   <Button
                     variant="ghost"
@@ -80,14 +102,23 @@ export default function CartPage() {
 
                 <div className="space-y-6">
                   {items.map((item) => {
+                    const basePrice = item.variation.price;
                     const finalPrice = item.product.discount
-                      ? item.product.price * (1 - item.product.discount / 100)
-                      : item.product.price
-                    const productName = locale === "sr" ? item.product.name : item.product.nameEn
-                    const productUnit = locale === "sr" ? item.product.unit : item.product.unitEn
+                      ? basePrice * (1 - item.product.discount / 100)
+                      : basePrice;
+                    const productName =
+                      locale === "sr" ? item.product.name : item.product.nameEn;
+                    const variationName =
+                      locale === "sr"
+                        ? item.variation.name
+                        : item.variation.nameEn;
+                    const productUnit =
+                      locale === "sr"
+                        ? item.variation.unit
+                        : item.variation.unitEn;
 
                     return (
-                      <div key={item.product.id}>
+                      <div key={item.variation.id}>
                         <div className="flex gap-6">
                           {/* Product Image */}
                           <Link
@@ -95,8 +126,12 @@ export default function CartPage() {
                             className="relative h-32 w-32 flex-shrink-0 rounded-xl overflow-hidden bg-muted hover:ring-2 hover:ring-primary transition-all"
                           >
                             <Image
-                              src={item.product.image || "/placeholder.svg"}
-                              alt={productName}
+                              src={
+                                item.variation.imageUrl ||
+                                item.product.image ||
+                                "/placeholder.svg"
+                              }
+                              alt={`${productName} ${variationName}`}
                               fill
                               className="object-contain p-3"
                             />
@@ -108,9 +143,13 @@ export default function CartPage() {
                               href={`/products/${item.product.id}`}
                               className="hover:text-primary transition-colors"
                             >
-                              <h3 className="font-bold text-lg line-clamp-2 mb-1">{productName}</h3>
+                              <h3 className="font-bold text-lg line-clamp-2 mb-1">
+                                {productName}
+                              </h3>
                             </Link>
-                            <p className="text-sm text-muted-foreground mb-4">{productUnit}</p>
+                            <p className="text-sm text-muted-foreground mb-4">
+                              {variationName} • {productUnit}
+                            </p>
 
                             <div className="flex items-center gap-4">
                               {/* Quantity Controls */}
@@ -119,16 +158,28 @@ export default function CartPage() {
                                   variant="ghost"
                                   size="icon"
                                   className="h-10 w-10 hover:bg-muted"
-                                  onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                                  onClick={() =>
+                                    updateQuantity(
+                                      item.variation.id,
+                                      item.quantity - 1
+                                    )
+                                  }
                                 >
                                   <Minus className="h-4 w-4" />
                                 </Button>
-                                <span className="w-12 text-center text-base font-bold">{item.quantity}</span>
+                                <span className="w-12 text-center text-base font-bold">
+                                  {item.quantity}
+                                </span>
                                 <Button
                                   variant="ghost"
                                   size="icon"
                                   className="h-10 w-10 hover:bg-muted"
-                                  onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                                  onClick={() =>
+                                    updateQuantity(
+                                      item.variation.id,
+                                      item.quantity + 1
+                                    )
+                                  }
                                 >
                                   <Plus className="h-4 w-4" />
                                 </Button>
@@ -138,7 +189,7 @@ export default function CartPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => removeItem(item.product.id)}
+                                onClick={() => removeItem(item.variation.id)}
                                 className="text-destructive hover:text-destructive hover:bg-destructive/10"
                               >
                                 <Trash2 className="h-4 w-4 mr-2" />
@@ -149,10 +200,12 @@ export default function CartPage() {
 
                           {/* Price */}
                           <div className="text-right">
-                            <div className="font-bold text-xl mb-1">{(finalPrice * item.quantity).toFixed(2)} RSD</div>
+                            <div className="font-bold text-xl mb-1">
+                              {(finalPrice * item.quantity).toFixed(2)} RSD
+                            </div>
                             {item.product.discount && (
                               <div className="text-sm text-muted-foreground line-through mb-2">
-                                {(item.product.price * item.quantity).toFixed(2)} RSD
+                                {(basePrice * item.quantity).toFixed(2)} RSD
                               </div>
                             )}
                             <div className="text-xs text-muted-foreground">
@@ -162,7 +215,7 @@ export default function CartPage() {
                         </div>
                         <Separator className="mt-6" />
                       </div>
-                    )
+                    );
                   })}
                 </div>
               </CardContent>
@@ -173,11 +226,15 @@ export default function CartPage() {
           <div className="lg:col-span-1">
             <Card className="sticky top-24 border-2 shadow-xl">
               <CardContent className="p-6">
-                <h2 className="text-xl font-bold mb-6">{t("cart.orderDetails")}</h2>
+                <h2 className="text-xl font-bold mb-6">
+                  {t("cart.orderDetails")}
+                </h2>
 
                 {/* Promo Code */}
                 <div className="mb-6">
-                  <label className="text-sm font-semibold mb-3 block">{t("cart.promoCode")}</label>
+                  <label className="text-sm font-semibold mb-3 block">
+                    {t("cart.promoCode")}
+                  </label>
                   <div className="flex gap-2">
                     <Input
                       placeholder={t("cart.promoCodePlaceholder")}
@@ -185,7 +242,10 @@ export default function CartPage() {
                       onChange={(e) => setPromoCode(e.target.value)}
                       className="flex-1 h-11"
                     />
-                    <Button variant="outline" className="h-11 px-6 bg-transparent">
+                    <Button
+                      variant="outline"
+                      className="h-11 px-6 bg-transparent"
+                    >
                       {t("cart.applyPromo")}
                     </Button>
                   </div>
@@ -196,13 +256,21 @@ export default function CartPage() {
                 {/* Price Breakdown */}
                 <div className="space-y-4">
                   <div className="flex justify-between text-base">
-                    <span className="text-muted-foreground">{t("cart.allProducts")}</span>
-                    <span className="font-semibold">{subtotal.toFixed(2)} RSD</span>
+                    <span className="text-muted-foreground">
+                      {t("cart.allProducts")}
+                    </span>
+                    <span className="font-semibold">
+                      {subtotal.toFixed(2)} RSD
+                    </span>
                   </div>
                   <div className="flex justify-between text-base">
-                    <span className="text-muted-foreground">{t("cart.deliveryFee")}</span>
+                    <span className="text-muted-foreground">
+                      {t("cart.deliveryFee")}
+                    </span>
                     <span className="font-semibold">
-                      {deliveryFee === 0 ? t("cart.free") : `${deliveryFee.toFixed(2)} RSD`}
+                      {deliveryFee === 0
+                        ? t("cart.free")
+                        : `${deliveryFee.toFixed(2)} RSD`}
                     </span>
                   </div>
                   {deliveryFee > 0 && (
@@ -217,7 +285,9 @@ export default function CartPage() {
                 {/* Total */}
                 <div className="flex justify-between items-center mb-6 p-4 bg-primary/5 rounded-lg">
                   <span className="text-xl font-bold">{t("total")}</span>
-                  <span className="text-3xl font-bold text-primary">{total.toFixed(2)} RSD</span>
+                  <span className="text-3xl font-bold text-primary">
+                    {total.toFixed(2)} RSD
+                  </span>
                 </div>
 
                 {/* Checkout Button */}
@@ -246,5 +316,5 @@ export default function CartPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

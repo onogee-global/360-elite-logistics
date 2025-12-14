@@ -1,49 +1,69 @@
-"use client"
+"use client";
 
-import Image from "next/image"
-import Link from "next/link"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { ShoppingCart, Sparkles } from "lucide-react"
-import type { Product } from "@/lib/types"
-import { useCartStore } from "@/lib/cart-store"
-import { useToast } from "@/hooks/use-toast"
-import { useLocale } from "@/lib/locale-context"
-import { categories } from "@/lib/mock-data"
+import Image from "next/image";
+import Link from "next/link";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ShoppingCart, Sparkles } from "lucide-react";
+import type { Product } from "@/lib/types";
+import { useCartStore } from "@/lib/cart-store";
+import { useToast } from "@/hooks/use-toast";
+import { useLocale } from "@/lib/locale-context";
+import { categories } from "@/lib/mock-data";
+import type { ProductVariation } from "@/lib/types";
 
 interface ProductCardProps {
-  product: Product
+  product: Product;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const addItem = useCartStore((state) => state.addItem)
-  const { toast } = useToast()
-  const { locale, t } = useLocale()
+  const addItem = useCartStore((state) => state.addItem);
+  const { toast } = useToast();
+  const { locale, t } = useLocale();
 
   const handleAddToCart = () => {
-    addItem(product)
+    const variation: ProductVariation = {
+      id: `${product.id}-default`,
+      productId: product.id,
+      name: product.unit ?? "Standard",
+      nameEn: product.unitEn ?? "Standard",
+      price: product.price ?? 0,
+      unit: product.unit ?? "",
+      unitEn: product.unitEn ?? "",
+      inStock: product.inStock ?? false,
+      imageUrl: product.image,
+      isActive: true,
+    };
+    addItem(product, variation);
     toast({
       title: t("product.addedToCart"),
-      description: `${locale === "sr" ? product.name : product.nameEn} ${t("product.addedMessage")}`,
-    })
-  }
+      description: `${locale === "sr" ? product.name : product.nameEn} ${t(
+        "product.addedMessage"
+      )}`,
+    });
+  };
 
-  const finalPrice = product.discount ? product.price * (1 - product.discount / 100) : product.price
-  const productName = locale === "sr" ? product.name : product.nameEn
-  const productUnit = locale === "sr" ? product.unit : product.unitEn
+  const basePrice = product.price ?? 0;
+  const finalPrice = product.discount
+    ? basePrice * (1 - product.discount / 100)
+    : basePrice;
+  const productName = locale === "sr" ? product.name : product.nameEn;
+  const productUnit = locale === "sr" ? product.unit : product.unitEn;
 
-  const category = categories.find((c) => c.id === product.categoryId)
-  const subcategory = category?.subcategories?.find((s) => s.id === product.subcategoryId)
+  const category = categories.find((c) => c.id === product.categoryId);
+  const subcategory = category?.subcategories?.find(
+    (s) => s.id === product.subcategoryId
+  );
   const categoryName = subcategory
     ? locale === "sr"
       ? subcategory.name
       : subcategory.nameEn
     : category
-      ? locale === "sr"
-        ? category.name
-        : category.nameEn
-      : ""
+    ? locale === "sr"
+      ? category.name
+      : category.nameEn
+    : "";
 
   return (
     <Card className="group relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
@@ -83,10 +103,14 @@ export function ProductCard({ product }: ProductCardProps) {
               <span className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                 {finalPrice.toFixed(2)} RSD
               </span>
-              <span className="text-sm text-muted-foreground line-through">{product.price.toFixed(2)} RSD</span>
+              <span className="text-sm text-muted-foreground line-through">
+                {basePrice.toFixed(2)} RSD
+              </span>
             </>
           ) : (
-            <span className="text-2xl font-bold">{product.price.toFixed(2)} RSD</span>
+            <span className="text-2xl font-bold">
+              {basePrice.toFixed(2)} RSD
+            </span>
           )}
         </div>
       </CardContent>
@@ -102,5 +126,5 @@ export function ProductCard({ product }: ProductCardProps) {
         </Button>
       </CardFooter>
     </Card>
-  )
+  );
 }

@@ -1,25 +1,36 @@
-"use client"
+"use client";
 
-import Image from "next/image"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { ShoppingCart, Minus, Plus, Trash2, Package } from "lucide-react"
-import { useCartStore } from "@/lib/cart-store"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { useLocale } from "@/lib/locale-context"
-import { Separator } from "@/components/ui/separator"
+import Image from "next/image";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { ShoppingCart, Minus, Plus, Trash2, Package } from "lucide-react";
+import { useCartStore } from "@/lib/cart-store";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useLocale } from "@/lib/locale-context";
+import { Separator } from "@/components/ui/separator";
 
 export function CartDrawer() {
-  const { items, updateQuantity, removeItem, getTotal, getItemCount } = useCartStore()
-  const { locale, t } = useLocale()
-  const itemCount = getItemCount()
-  const total = getTotal()
+  const { items, updateQuantity, removeItem, getTotal, getItemCount } =
+    useCartStore();
+  const { locale, t } = useLocale();
+  const itemCount = getItemCount();
+  const total = getTotal();
 
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-2 relative hover:bg-primary/10">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-2 relative hover:bg-primary/10"
+        >
           <ShoppingCart className="h-5 w-5" />
           <span className="hidden md:inline font-medium">{t("cart")}</span>
           {itemCount > 0 && (
@@ -52,7 +63,9 @@ export function CartDrawer() {
               </div>
               <div>
                 <p className="text-xl font-semibold mb-2">{t("emptyCart")}</p>
-                <p className="text-sm text-muted-foreground max-w-xs mx-auto">{t("startShopping")}</p>
+                <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                  {t("startShopping")}
+                </p>
               </div>
               <Button asChild className="mt-4">
                 <Link href="/products">{t("shop")}</Link>
@@ -61,25 +74,41 @@ export function CartDrawer() {
           </div>
         ) : (
           <>
-            <ScrollArea className="flex-1 px-6" style={{ maxHeight: "calc(100vh - 280px)" }}>
+            <ScrollArea
+              className="flex-1 px-6"
+              style={{ maxHeight: "calc(100vh - 280px)" }}
+            >
               <div className="space-y-3 py-6">
                 {items.map((item, index) => {
+                  const basePrice = item.variation.price;
                   const finalPrice = item.product.discount
-                    ? item.product.price * (1 - item.product.discount / 100)
-                    : item.product.price
-                  const productName = locale === "sr" ? item.product.name : item.product.nameEn
-                  const productUnit = locale === "sr" ? item.product.unit : item.product.unitEn
+                    ? basePrice * (1 - item.product.discount / 100)
+                    : basePrice;
+                  const productName =
+                    locale === "sr" ? item.product.name : item.product.nameEn;
+                  const variationName =
+                    locale === "sr"
+                      ? item.variation.name
+                      : item.variation.nameEn;
+                  const productUnit =
+                    locale === "sr"
+                      ? item.variation.unit
+                      : item.variation.unitEn;
 
                   return (
                     <div
-                      key={item.product.id}
+                      key={item.variation.id}
                       className="flex gap-4 p-4 rounded-xl border bg-card hover:shadow-md transition-all duration-300 animate-in fade-in slide-in-from-right"
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
                       <div className="relative h-20 w-20 flex-shrink-0 rounded-lg overflow-hidden bg-muted ring-1 ring-border">
                         <Image
-                          src={item.product.image || "/placeholder.svg"}
-                          alt={productName}
+                          src={
+                            item.variation.imageUrl ||
+                            item.product.image ||
+                            "/placeholder.svg"
+                          }
+                          alt={`${productName} ${variationName}`}
                           fill
                           className="object-contain p-2"
                         />
@@ -92,8 +121,12 @@ export function CartDrawer() {
 
                       <div className="flex-1 min-w-0 flex flex-col justify-between">
                         <div>
-                          <h4 className="font-semibold text-sm line-clamp-2 mb-1">{productName}</h4>
-                          <p className="text-xs text-muted-foreground">{productUnit}</p>
+                          <h4 className="font-semibold text-sm line-clamp-2 mb-0.5">
+                            {productName}
+                          </h4>
+                          <p className="text-xs text-muted-foreground">
+                            {variationName} • {productUnit}
+                          </p>
                         </div>
 
                         <div className="flex items-center justify-between mt-2">
@@ -102,16 +135,28 @@ export function CartDrawer() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 hover:bg-muted hover:text-primary transition-colors"
-                              onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                              onClick={() =>
+                                updateQuantity(
+                                  item.variation.id,
+                                  item.quantity - 1
+                                )
+                              }
                             >
                               <Minus className="h-3 w-3" />
                             </Button>
-                            <span className="w-10 text-center text-sm font-bold">{item.quantity}</span>
+                            <span className="w-10 text-center text-sm font-bold">
+                              {item.quantity}
+                            </span>
                             <Button
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 hover:bg-muted hover:text-primary transition-colors"
-                              onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                              onClick={() =>
+                                updateQuantity(
+                                  item.variation.id,
+                                  item.quantity + 1
+                                )
+                              }
                             >
                               <Plus className="h-3 w-3" />
                             </Button>
@@ -121,7 +166,7 @@ export function CartDrawer() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
-                            onClick={() => removeItem(item.product.id)}
+                            onClick={() => removeItem(item.variation.id)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -134,12 +179,12 @@ export function CartDrawer() {
                         </div>
                         {item.product.discount && (
                           <div className="text-xs text-muted-foreground line-through">
-                            {(item.product.price * item.quantity).toFixed(2)} RSD
+                            {(basePrice * item.quantity).toFixed(2)} RSD
                           </div>
                         )}
                       </div>
                     </div>
-                  )
+                  );
                 })}
               </div>
             </ScrollArea>
@@ -147,7 +192,9 @@ export function CartDrawer() {
             <div className="border-t bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm px-6 py-5 space-y-4 shadow-lg">
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{t("cart.allProducts")}</span>
+                  <span className="text-muted-foreground">
+                    {t("cart.allProducts")}
+                  </span>
                   <span className="font-semibold">{total.toFixed(2)} RSD</span>
                 </div>
                 <Separator />
@@ -171,5 +218,5 @@ export function CartDrawer() {
         )}
       </SheetContent>
     </Sheet>
-  )
+  );
 }

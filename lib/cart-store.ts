@@ -2,13 +2,13 @@
 
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
-import type { CartItem, Product } from "./types"
+import type { CartItem, Product, ProductVariation } from "./types"
 
 interface CartStore {
   items: CartItem[]
-  addItem: (product: Product) => void
-  removeItem: (productId: string) => void
-  updateQuantity: (productId: string, quantity: number) => void
+  addItem: (product: Product, variation: ProductVariation) => void
+  removeItem: (variationId: string) => void
+  updateQuantity: (variationId: string, quantity: number) => void
   clearCart: () => void
   getTotal: () => number
   getItemCount: () => number
@@ -18,39 +18,37 @@ export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
       items: [],
-      addItem: (product) => {
+      addItem: (product, variation) => {
         set((state) => {
-          const existingItem = state.items.find((item) => item.product.id === product.id)
+          const existingItem = state.items.find((item) => item.variation.id === variation.id)
           if (existingItem) {
             return {
               items: state.items.map((item) =>
-                item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item,
+                item.variation.id === variation.id ? { ...item, quantity: item.quantity + 1 } : item,
               ),
             }
           }
-          return { items: [...state.items, { product, quantity: 1 }] }
+          return { items: [...state.items, { product, variation, quantity: 1 }] }
         })
       },
-      removeItem: (productId) => {
+      removeItem: (variationId) => {
         set((state) => ({
-          items: state.items.filter((item) => item.product.id !== productId),
+          items: state.items.filter((item) => item.variation.id !== variationId),
         }))
       },
-      updateQuantity: (productId, quantity) => {
+      updateQuantity: (variationId, quantity) => {
         if (quantity <= 0) {
-          get().removeItem(productId)
+          get().removeItem(variationId)
           return
         }
         set((state) => ({
-          items: state.items.map((item) => (item.product.id === productId ? { ...item, quantity } : item)),
+          items: state.items.map((item) => (item.variation.id === variationId ? { ...item, quantity } : item)),
         }))
       },
       clearCart: () => set({ items: [] }),
       getTotal: () => {
         return get().items.reduce((total, item) => {
-          const price = item.product.discount
-            ? item.product.price * (1 - item.product.discount / 100)
-            : item.product.price
+          const price = item.variation.price
           return total + price * item.quantity
         }, 0)
       },
@@ -59,7 +57,8 @@ export const useCartStore = create<CartStore>()(
       },
     }),
     {
-      name: "cart-storage",
+      // Bump storage key to avoid incompatible type issues after refactor
+      name: "cart-storage-v2",
     },
   ),
 )

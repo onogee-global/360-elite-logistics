@@ -1,17 +1,34 @@
+export interface ProductVariation {
+  id: string
+  productId: string
+  name: string
+  nameEn: string
+  price: number
+  unit: string
+  unitEn: string
+  inStock: boolean
+  imageUrl?: string
+  isActive?: boolean
+}
+
 export interface Product {
   id: string
   name: string
   nameEn: string
   description: string
   descriptionEn: string
-  price: number
   image: string
   categoryId: string
   subcategoryId: string
-  unit: string
-  unitEn: string
-  inStock: boolean
+  // Product-level commercial fields deprecated in favor of variations
+  // Kept optional during migration to avoid breaking UI while refactoring
+  price?: number
+  unit?: string
+  unitEn?: string
+  inStock?: boolean
   discount?: number
+  // Active variations for this product (must be fetched on detail page)
+  variations?: ProductVariation[]
 }
 
 export interface Category {
@@ -33,6 +50,7 @@ export interface Subcategory {
 
 export interface CartItem {
   product: Product
+  variation: ProductVariation
   quantity: number
 }
 

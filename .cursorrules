@@ -1,0 +1,35 @@
+You are coding an e-commerce web app for 360 Logistics using Next.js 14 (App Router), TypeScript, styled-components, and Supabase.
+
+HARD RULES:
+
+- There is NO admin panel in scope.
+- Products are base entities. Variations (types/flavors/sizes) belong to a product and are not separate products.
+- Cart and orders must operate on VARIATION LEVEL (variation_id), not product level.
+- Checkout is allowed only for authenticated users (Supabase Auth).
+- Orders must be saved to Supabase and emailed (no online payment).
+- Do not implement any payment provider.
+- Do not add “admin” routes, dashboards, product CRUD UI, or order management UI.
+
+DATA RULES:
+
+- Use tables: categories, products, product_variations, orders, order_items, (optional user_profiles).
+- Product detail page must fetch product + active variations.
+- If product has only 1 variation: auto-select and hide variation chooser.
+- If product has >1 variations: require user selection before add-to-cart.
+- Variation may have its own image_url that overrides product image when selected.
+
+UI RULES:
+
+- Product listing shows product once (no duplication for variations).
+- Product details show image as: variation.image_url ?? product.image_url.
+- Cart item image uses the same logic.
+
+ENGINEERING RULES:
+
+- Prefer clean components and predictable folder structure.
+- Use environment variables for Supabase keys and email settings.
+- Keep UI minimal and white-based; no Tailwind.
+- Implement SR/EN translations and hreflang; SEO basics: meta, sitemap, robots, schema.org/Product.
+- Provide code that is production-ready, typed, and easy to maintain.
+
+When uncertain, follow the README spec and document assumptions in code comments.

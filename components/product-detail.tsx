@@ -1,39 +1,86 @@
-"use client"
+"use client";
 
-import Image from "next/image"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { ShoppingCart, Minus, Plus, ArrowLeft } from "lucide-react"
-import type { Product, Category } from "@/lib/types"
-import { useCartStore } from "@/lib/cart-store"
-import { useToast } from "@/hooks/use-toast"
-import { useState } from "react"
+import Image from "next/image";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { ShoppingCart, Minus, Plus, ArrowLeft } from "lucide-react";
+import type { Product, Category, ProductVariation } from "@/lib/types";
+import { useCartStore } from "@/lib/cart-store";
+import { useToast } from "@/hooks/use-toast";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ProductDetailProps {
-  product: Product
-  category?: Category
+  product: Product;
+  category?: Category;
 }
 
 export function ProductDetail({ product, category }: ProductDetailProps) {
-  const [quantity, setQuantity] = useState(1)
-  const addItem = useCartStore((state) => state.addItem)
-  const { toast } = useToast()
+  const [quantity, setQuantity] = useState(1);
+  const [selectedVariationId, setSelectedVariationId] = useState<
+    string | undefined
+  >(undefined);
+  const addItem = useCartStore((state) => state.addItem);
+  const { toast } = useToast();
+
+  const variations = product.variations ?? [];
+  const effectiveVariations: ProductVariation[] = useMemo(() => {
+    if (variations.length > 0) return variations;
+    // Backward-compatibility: synthesize a single variation from legacy product fields
+    return [
+      {
+        id: `${product.id}-default`,
+        productId: product.id,
+        name: product.unit ?? "Standard",
+        nameEn: product.unitEn ?? "Standard",
+        price: product.price ?? 0,
+        unit: product.unit ?? "",
+        unitEn: product.unitEn ?? "",
+        inStock: product.inStock ?? false,
+        imageUrl: product.image,
+        isActive: true,
+      },
+    ];
+  }, [variations, product]);
+  const selectedVariation: ProductVariation | undefined = useMemo(
+    () => effectiveVariations.find((v) => v.id === selectedVariationId),
+    [effectiveVariations, selectedVariationId]
+  );
+
+  useEffect(() => {
+    if (effectiveVariations.length === 1) {
+      setSelectedVariationId(effectiveVariations[0].id);
+    }
+  }, [effectiveVariations]);
 
   const handleAddToCart = () => {
+    if (!selectedVariation) return;
     for (let i = 0; i < quantity; i++) {
-      addItem(product)
+      addItem(product, selectedVariation);
     }
     toast({
       title: "Dodato u korpu",
-      description: `${quantity}x ${product.name} je dodato u vašu korpu`,
-    })
-    setQuantity(1)
-  }
+      description: `${quantity}x ${product.name} (${selectedVariation.name}) je dodato u vašu korpu`,
+    });
+    setQuantity(1);
+  };
 
-  const finalPrice = product.discount ? product.price * (1 - product.discount / 100) : product.price
+  const basePrice = selectedVariation?.price ?? 0;
+  const finalPrice = product.discount
+    ? basePrice * (1 - product.discount / 100)
+    : basePrice;
+  const isInStock = selectedVariation ? selectedVariation.inStock : false;
+  const displayImage =
+    selectedVariation?.imageUrl || product.image || "/placeholder.svg";
 
   return (
     <div className="container mx-auto px-4 py-6 md:py-8">
@@ -43,13 +90,19 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
           Početna
         </Link>
         <span>/</span>
-        <Link href="/products" className="hover:text-foreground whitespace-nowrap">
+        <Link
+          href="/products"
+          className="hover:text-foreground whitespace-nowrap"
+        >
           Proizvodi
         </Link>
         {category && (
           <>
             <span>/</span>
-            <Link href={`/products?category=${category.slug}`} className="hover:text-foreground whitespace-nowrap">
+            <Link
+              href={`/products?category=${category.slug}`}
+              className="hover:text-foreground whitespace-nowrap"
+            >
               {category.name}
             </Link>
           </>
@@ -69,12 +122,17 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
       {/* Product Image */}
       <div className="grid md:grid-cols-2 gap-6 md:gap-8">
         <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
-          {product.discount && (
+          {product.discount && selectedVariation && (
             <Badge className="absolute top-3 right-3 md:top-4 md:right-4 z-10 bg-destructive text-destructive-foreground text-base md:text-lg px-2 py-1 md:px-3">
               -{product.discount}%
             </Badge>
           )}
-          <Image src={product.image || "/placeholder.svg"} alt={product.name} fill className="object-cover" />
+          <Image
+            src={displayImage}
+            alt={product.name}
+            fill
+            className="object-cover"
+          />
         </div>
 
         {/* Product Info */}
@@ -85,28 +143,72 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
                 {category.icon} {category.name}
               </p>
             )}
-            <h1 className="text-2xl md:text-3xl font-bold mb-2">{product.name}</h1>
-            <p className="text-sm md:text-base text-muted-foreground">{product.description}</p>
+            <h1 className="text-2xl md:text-3xl font-bold mb-2">
+              {product.name}
+            </h1>
+            <p className="text-sm md:text-base text-muted-foreground">
+              {product.description}
+            </p>
           </div>
 
           <Separator />
 
+          {/* Variation Selector */}
+          {effectiveVariations.length > 1 && (
+            <div>
+              <p className="text-sm font-medium mb-3">Varijanta</p>
+              <Select
+                value={selectedVariationId}
+                onValueChange={setSelectedVariationId}
+              >
+                <SelectTrigger className="min-w-[240px]">
+                  <SelectValue placeholder="Izaberite varijantu" />
+                </SelectTrigger>
+                <SelectContent>
+                  {effectiveVariations.map((v) => (
+                    <SelectItem key={v.id} value={v.id}>
+                      {v.name} — {v.price.toFixed(2)} RSD
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {/* Price */}
           <div>
-            <p className="text-xs md:text-sm text-muted-foreground mb-2">Cena</p>
+            <p className="text-xs md:text-sm text-muted-foreground mb-2">
+              Cena
+            </p>
             <div className="flex items-baseline gap-2 md:gap-3">
-              {product.discount ? (
+              {selectedVariation ? (
                 <>
-                  <span className="text-3xl md:text-4xl font-bold">{finalPrice.toFixed(2)} RSD</span>
-                  <span className="text-lg md:text-xl text-muted-foreground line-through">
-                    {product.price.toFixed(2)} RSD
-                  </span>
+                  {product.discount ? (
+                    <>
+                      <span className="text-3xl md:text-4xl font-bold">
+                        {finalPrice.toFixed(2)} RSD
+                      </span>
+                      <span className="text-lg md:text-xl text-muted-foreground line-through">
+                        {basePrice.toFixed(2)} RSD
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-3xl md:text-4xl font-bold">
+                      {basePrice.toFixed(2)} RSD
+                    </span>
+                  )}
                 </>
               ) : (
-                <span className="text-3xl md:text-4xl font-bold">{product.price.toFixed(2)} RSD</span>
+                <span className="text-3xl md:text-4xl font-bold text-muted-foreground">
+                  —
+                </span>
               )}
             </div>
-            <p className="text-xs md:text-sm text-muted-foreground mt-1">Pakovanje: {product.unit}</p>
+            {!!selectedVariation && (
+              <p className="text-xs md:text-sm text-muted-foreground mt-1">
+                Pakovanje: {selectedVariation.unit}
+              </p>
+            )}
           </div>
 
           <Separator />
@@ -125,24 +227,43 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
                   <Minus className="h-4 w-4" />
                 </Button>
                 <span className="w-12 text-center font-medium">{quantity}</span>
-                <Button variant="ghost" size="icon" onClick={() => setQuantity(quantity + 1)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setQuantity(quantity + 1)}
+                >
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
-              <span className="text-sm text-muted-foreground">Ukupno: {(finalPrice * quantity).toFixed(2)} RSD</span>
+              <span className="text-sm text-muted-foreground">
+                Ukupno:{" "}
+                {selectedVariation ? (finalPrice * quantity).toFixed(2) : "—"}{" "}
+                RSD
+              </span>
             </div>
           </div>
 
           {/* Add to Cart */}
-          <Button size="lg" className="w-full" onClick={handleAddToCart} disabled={!product.inStock}>
+          <Button
+            size="lg"
+            className="w-full"
+            onClick={handleAddToCart}
+            disabled={!selectedVariation || !isInStock}
+          >
             <ShoppingCart className="mr-2 h-5 w-5" />
-            {product.inStock ? "Dodaj u korpu" : "Nema na stanju"}
+            {selectedVariation
+              ? isInStock
+                ? "Dodaj u korpu"
+                : "Nema na stanju"
+              : "Izaberite varijantu"}
           </Button>
 
           {/* Product Details */}
           <Card>
             <CardContent className="p-4 md:p-6">
-              <h3 className="font-semibold mb-4 text-sm md:text-base">Detalji proizvoda</h3>
+              <h3 className="font-semibold mb-4 text-sm md:text-base">
+                Detalji proizvoda
+              </h3>
               <dl className="space-y-2 text-xs md:text-sm">
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Kategorija:</dt>
@@ -150,11 +271,15 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Pakovanje:</dt>
-                  <dd className="font-medium">{product.unit}</dd>
+                  <dd className="font-medium">
+                    {selectedVariation?.unit ?? "-"}
+                  </dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Dostupnost:</dt>
-                  <dd className="font-medium">{product.inStock ? "Na stanju" : "Nema na stanju"}</dd>
+                  <dd className="font-medium">
+                    {isInStock ? "Na stanju" : "Nema na stanju"}
+                  </dd>
                 </div>
               </dl>
             </CardContent>
@@ -162,5 +287,5 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }
