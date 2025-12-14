@@ -45,9 +45,15 @@ export function ProductCard({ product }: ProductCardProps) {
   };
 
   const basePrice = product.price ?? 0;
-  const finalPrice = product.discount
-    ? basePrice * (1 - product.discount / 100)
-    : basePrice;
+  const minVariationPrice =
+    product.variations && product.variations.length > 0
+      ? Math.min(...product.variations.map((v) => v.price))
+      : undefined;
+  const displayBasePrice = minVariationPrice ?? basePrice;
+  const finalPrice =
+    product.discount && displayBasePrice
+      ? displayBasePrice * (1 - product.discount / 100)
+      : displayBasePrice;
   const productName = locale === "sr" ? product.name : product.nameEn;
   const productUnit = locale === "sr" ? product.unit : product.unitEn;
 
@@ -104,12 +110,12 @@ export function ProductCard({ product }: ProductCardProps) {
                 {finalPrice.toFixed(2)} RSD
               </span>
               <span className="text-sm text-muted-foreground line-through">
-                {basePrice.toFixed(2)} RSD
+                {displayBasePrice.toFixed(2)} RSD
               </span>
             </>
           ) : (
             <span className="text-2xl font-bold">
-              {basePrice.toFixed(2)} RSD
+              {displayBasePrice.toFixed(2)} RSD
             </span>
           )}
         </div>

@@ -1,26 +1,24 @@
-import { notFound } from "next/navigation"
-import { products, categories } from "@/lib/mock-data"
-import { ProductDetail } from "@/components/product-detail"
+import { notFound } from "next/navigation";
+import { ProductDetail } from "@/components/product-detail";
+import { fetchProductById } from "@/lib/supabase";
 
 interface ProductPageProps {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string }>;
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
-  const { id } = await params
-  const product = products.find((p) => p.id === id)
+  const { id } = await params;
+  const product = await fetchProductById(id);
 
   if (!product) {
-    notFound()
+    notFound();
   }
 
-  const category = categories.find((c) => c.slug === product.category)
-
-  return <ProductDetail product={product} category={category} />
+  // Category is optional in detail UI; fetch when needed
+  return <ProductDetail product={product} />;
 }
 
 export async function generateStaticParams() {
-  return products.map((product) => ({
-    id: product.id,
-  }))
+  // Fallback to no pre-rendered paths; rely on runtime fetch
+  return [];
 }
