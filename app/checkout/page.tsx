@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CreditCard, Banknote, Package, MapPin } from "lucide-react";
 import Image from "next/image";
 import { useLocale } from "@/lib/locale-context";
+import { supabase } from "@/lib/supabase";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -33,13 +34,42 @@ export default function CheckoutPage() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
   const subtotal = getTotal();
   const deliveryFee = subtotal >= 3000 ? 0 : 199;
   const total = subtotal + deliveryFee;
 
+  // Require authenticated user for checkout
+  useEffect(() => {
+    let cancelled = false;
+    async function checkAuth() {
+      const { data } = await supabase.auth.getUser();
+      if (!cancelled) {
+        if (!data.user) {
+          router.replace(`/login?redirect=${encodeURIComponent("/checkout")}`);
+          return;
+        }
+        // Prefill email if available
+        setFormData((prev) => ({
+          ...prev,
+          email: data.user.email ?? prev.email,
+        }));
+        setAuthChecked(true);
+      }
+    }
+    checkAuth();
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
+
   if (items.length === 0) {
     router.push("/cart");
+    return null;
+  }
+
+  if (!authChecked) {
     return null;
   }
 

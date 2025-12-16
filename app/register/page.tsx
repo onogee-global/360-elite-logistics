@@ -1,48 +1,70 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Separator } from "@/components/ui/separator"
-import { useToast } from "@/hooks/use-toast"
-import { UserPlus, Mail, Lock, User } from "lucide-react"
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
+import { UserPlus, Mail, Lock, User } from "lucide-react";
+import { getCurrentUser, signUpWithEmailPassword } from "../../lib/auth";
 
 export default function RegisterPage() {
-  const router = useRouter()
-  const { toast } = useToast()
-  const [isLoading, setIsLoading] = useState(false)
-  const [acceptedTerms, setAcceptedTerms] = useState(false)
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     confirmPassword: "",
-  })
+  });
+
+  // If already logged in, redirect to account
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const user = await getCurrentUser();
+      if (!cancelled && user) {
+        router.replace("/account");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
-    }))
-  }
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
       toast({
         title: "Greška",
         description: "Lozinke se ne poklapaju",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     if (!acceptedTerms) {
@@ -50,23 +72,29 @@ export default function RegisterPage() {
         title: "Greška",
         description: "Morate prihvatiti uslove korišćenja",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    setIsLoading(true)
-
-    // Simulate registration
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    toast({
-      title: "Uspešna registracija",
-      description: "Vaš nalog je kreiran. Dobrodošli!",
-    })
-
-    setIsLoading(false)
-    router.push("/account")
-  }
+    setIsLoading(true);
+    try {
+      await signUpWithEmailPassword(formData.email, formData.password);
+      toast({
+        title: "Uspešna registracija",
+        description: "Proverite email za potvrdu naloga.",
+      });
+      const redirect = searchParams.get("redirect");
+      router.push(redirect || "/account");
+    } catch (err: any) {
+      toast({
+        title: "Registracija neuspešna",
+        description: err?.message || "Pokušajte ponovo kasnije",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-16">
@@ -132,7 +160,9 @@ export default function RegisterPage() {
                   minLength={8}
                 />
               </div>
-              <p className="text-xs text-muted-foreground">Minimum 8 karaktera</p>
+              <p className="text-xs text-muted-foreground">
+                Minimum 8 karaktera
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -156,9 +186,14 @@ export default function RegisterPage() {
               <Checkbox
                 id="terms"
                 checked={acceptedTerms}
-                onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
+                onCheckedChange={(checked) =>
+                  setAcceptedTerms(checked as boolean)
+                }
               />
-              <Label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer">
+              <Label
+                htmlFor="terms"
+                className="text-sm leading-relaxed cursor-pointer"
+              >
                 Prihvatam{" "}
                 <Link href="/terms" className="text-primary hover:underline">
                   uslove korišćenja
@@ -170,7 +205,12 @@ export default function RegisterPage() {
               </Label>
             </div>
 
-            <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+            <Button
+              type="submit"
+              className="w-full"
+              size="lg"
+              disabled={isLoading}
+            >
               <UserPlus className="mr-2 h-4 w-4" />
               {isLoading ? "Registracija u toku..." : "Registruj se"}
             </Button>
@@ -185,12 +225,15 @@ export default function RegisterPage() {
 
           <div className="text-center text-sm">
             <span className="text-muted-foreground">Već imate nalog? </span>
-            <Link href="/login" className="text-primary font-medium hover:underline">
+            <Link
+              href="/login"
+              className="text-primary font-medium hover:underline"
+            >
               Prijavite se
             </Link>
           </div>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

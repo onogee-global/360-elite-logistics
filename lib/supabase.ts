@@ -127,3 +127,4 @@ export async function fetchCategories(): Promise<Category[]> {
   return data.map((c) => ({ ...c, subcategories: [] })) as Category[]
 }
 
+
