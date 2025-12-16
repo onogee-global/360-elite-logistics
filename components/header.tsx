@@ -1,29 +1,80 @@
-"use client"
+"use client";
 
-import type React from "react"
-import Link from "next/link"
-import { Search, User, Globe, Menu, Home, ShoppingBag, Info, Truck, Mail, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { CartDrawer } from "@/components/cart-drawer"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { useLocale } from "@/lib/locale-context"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import type React from "react";
+import Link from "next/link";
+import {
+  Search,
+  User,
+  Globe,
+  Menu,
+  Home,
+  ShoppingBag,
+  Info,
+  Truck,
+  Mail,
+  X,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { CartDrawer } from "@/components/cart-drawer";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useLocale } from "@/lib/locale-context";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { supabase } from "@/lib/supabase";
 
 export function Header() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const router = useRouter()
-  const { locale, setLocale, t } = useLocale()
+  const [searchQuery, setSearchQuery] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const router = useRouter();
+  const { locale, setLocale, t } = useLocale();
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadUser() {
+      const { data } = await supabase.auth.getUser();
+      if (!isMounted) return;
+      const u = data.user;
+      if (u) {
+        setUserEmail(u.email ?? null);
+        const meta = (u as any).user_metadata || {};
+        setUserName(meta.name || meta.full_name || null);
+      } else {
+        setUserEmail(null);
+        setUserName(null);
+      }
+    }
+    loadUser();
+    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+      loadUser();
+    });
+    return () => {
+      isMounted = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
+  const displayName = useMemo(() => {
+    if (userName && userName.trim()) return userName;
+    if (userEmail) return userEmail.split("@")[0];
+    return null;
+  }, [userName, userEmail]);
 
   const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
+      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
     }
-  }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setMobileMenuOpen(false);
+    router.push("/");
+  };
 
   const navLinks = [
     { href: "/", label: t("home"), icon: Home },
@@ -31,7 +82,7 @@ export function Header() {
     { href: "/about", label: t("about"), icon: Info },
     { href: "/delivery", label: t("delivery"), icon: Truck },
     { href: "/contact", label: t("contact"), icon: Mail },
-  ]
+  ];
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background">
@@ -39,13 +90,19 @@ export function Header() {
         <div className="container mx-auto px-4 py-2">
           <div className="flex items-center justify-between md:justify-between gap-4 text-xs md:text-sm overflow-x-auto scrollbar-hide">
             <p className="whitespace-nowrap">
-              {locale === "sr" ? "Dostava u vreme koje odaberete" : "Delivery at your chosen time"}
+              {locale === "sr"
+                ? "Dostava u vreme koje odaberete"
+                : "Delivery at your chosen time"}
             </p>
             <p className="whitespace-nowrap hidden sm:block">
-              {locale === "sr" ? "Poruči do 21h za sledeće jutro" : "Order by 9 PM for next morning"}
+              {locale === "sr"
+                ? "Poruči do 21h za sledeće jutro"
+                : "Order by 9 PM for next morning"}
             </p>
             <p className="whitespace-nowrap hidden md:block">
-              {locale === "sr" ? "Donosimo teške artikle do tvojih vrata" : "We bring heavy items to your door"}
+              {locale === "sr"
+                ? "Donosimo teške artikle do tvojih vrata"
+                : "We bring heavy items to your door"}
             </p>
           </div>
         </div>
@@ -55,11 +112,18 @@ export function Header() {
         <div className="flex items-center gap-2 md:gap-6">
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden hover:bg-primary/10 transition-colors">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden hover:bg-primary/10 transition-colors"
+              >
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[300px] sm:w-[350px] p-0 flex flex-col">
+            <SheetContent
+              side="left"
+              className="w-[300px] sm:w-[350px] p-0 flex flex-col"
+            >
               <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-primary/5 to-accent/5">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-lg shadow-md">
@@ -88,7 +152,7 @@ export function Header() {
               <ScrollArea className="flex-1 px-4 py-6">
                 <nav className="space-y-2">
                   {navLinks.map((link, index) => {
-                    const Icon = link.icon
+                    const Icon = link.icon;
                     return (
                       <Link
                         key={link.href}
@@ -102,23 +166,47 @@ export function Header() {
                         </div>
                         <span>{link.label}</span>
                       </Link>
-                    )
+                    );
                   })}
                 </nav>
 
                 <div className="mt-6 pt-6 border-t">
-                  <Link
-                    href="/login"
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 group"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted group-hover:bg-primary/20 transition-colors">
-                      <User className="h-4 w-4" />
+                  {displayName ? (
+                    <div className="px-4 space-y-2">
+                      <Link
+                        href="/account"
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 group"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted group-hover:bg-primary/20 transition-colors">
+                          <User className="h-4 w-4" />
+                        </div>
+                        <span className="truncate max-w-[160px]">
+                          {displayName}
+                        </span>
+                      </Link>
+                      <Button
+                        variant="outline"
+                        className="w-full bg-transparent"
+                        onClick={handleLogout}
+                      >
+                        {locale === "sr" ? "Odjava" : "Logout"}
+                      </Button>
                     </div>
-                    <span>
-                      {t("login")} / {t("register")}
-                    </span>
-                  </Link>
+                  ) : (
+                    <Link
+                      href="/login"
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 group"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted group-hover:bg-primary/20 transition-colors">
+                        <User className="h-4 w-4" />
+                      </div>
+                      <span>
+                        {t("login")} / {t("register")}
+                      </span>
+                    </Link>
+                  )}
                 </div>
 
                 <div className="mt-6 pt-6 border-t">
@@ -129,12 +217,14 @@ export function Header() {
                     variant="outline"
                     className="w-full justify-start gap-3 h-12 hover:bg-primary/10 hover:text-primary hover:border-primary transition-all bg-transparent"
                     onClick={() => {
-                      setLocale(locale === "sr" ? "en" : "sr")
-                      setMobileMenuOpen(false)
+                      setLocale(locale === "sr" ? "en" : "sr");
+                      setMobileMenuOpen(false);
                     }}
                   >
                     <Globe className="h-4 w-4" />
-                    <span className="font-medium">{locale === "sr" ? "English" : "Srpski"}</span>
+                    <span className="font-medium">
+                      {locale === "sr" ? "English" : "Srpski"}
+                    </span>
                   </Button>
                 </div>
               </ScrollArea>
@@ -152,7 +242,10 @@ export function Header() {
             </span>
           </Link>
 
-          <form onSubmit={handleSearch} className="hidden sm:flex flex-1 max-w-2xl">
+          <form
+            onSubmit={handleSearch}
+            className="hidden sm:flex flex-1 max-w-2xl"
+          >
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -174,16 +267,47 @@ export function Header() {
               onClick={() => setLocale(locale === "sr" ? "en" : "sr")}
             >
               <Globe className="h-4 w-4" />
-              <span className="text-xs md:text-sm">{locale === "sr" ? "EN" : "SR"}</span>
+              <span className="text-xs md:text-sm">
+                {locale === "sr" ? "EN" : "SR"}
+              </span>
             </Button>
-            <Button variant="ghost" size="sm" className="gap-2 hidden md:flex" asChild>
-              <Link href="/login">
-                <User className="h-4 w-4" />
-                <span>
-                  {t("login")} / {t("register")}
+            {displayName ? (
+              <Link
+                href="/account"
+                className="gap-2 hidden md:flex items-center h-9 px-3 rounded-md hover:bg-primary/10 transition-colors"
+              >
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted">
+                  <User className="h-4 w-4" />
+                </div>
+                <span className="text-sm font-medium truncate max-w-[140px]">
+                  {displayName}
                 </span>
               </Link>
-            </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-2 hidden md:flex"
+                asChild
+              >
+                <Link href="/login">
+                  <User className="h-4 w-4" />
+                  <span>
+                    {t("login")} / {t("register")}
+                  </span>
+                </Link>
+              </Button>
+            )}
+            {displayName && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="hidden md:inline-flex bg-transparent"
+                onClick={handleLogout}
+              >
+                {locale === "sr" ? "Odjava" : "Logout"}
+              </Button>
+            )}
             <CartDrawer />
           </div>
         </div>
@@ -206,7 +330,11 @@ export function Header() {
         <div className="container mx-auto px-4">
           <nav className="flex items-center gap-6 py-3 text-sm">
             {navLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="hover:text-primary font-medium">
+              <Link
+                key={link.href}
+                href={link.href}
+                className="hover:text-primary font-medium"
+              >
                 {link.label}
               </Link>
             ))}
@@ -214,5 +342,5 @@ export function Header() {
         </div>
       </div>
     </header>
-  )
+  );
 }
