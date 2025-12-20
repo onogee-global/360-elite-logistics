@@ -1,28 +1,54 @@
 You are coding an e-commerce web app for 360 Logistics using Next.js 14 (App Router), TypeScript, styled-components, and Supabase.
 
+UPDATED SCOPE:
+
+- Admin panel IS included.
+- Variations are mandatory for purchasing (cart & orders operate on variation_id).
+
 HARD RULES:
 
-- There is NO admin panel in scope.
 - Products are base entities. Variations (types/flavors/sizes) belong to a product and are not separate products.
 - Cart and orders must operate on VARIATION LEVEL (variation_id), not product level.
 - Checkout is allowed only for authenticated users (Supabase Auth).
 - Orders must be saved to Supabase and emailed (no online payment).
 - Do not implement any payment provider.
-- Do not add “admin” routes, dashboards, product CRUD UI, or order management UI.
 
-DATA RULES:
+DATA RULES (Supabase):
 
 - Use tables: categories, products, product_variations, orders, order_items, (optional user_profiles).
-- Product detail page must fetch product + active variations.
-- If product has only 1 variation: auto-select and hide variation chooser.
-- If product has >1 variations: require user selection before add-to-cart.
-- Variation may have its own image_url that overrides product image when selected.
+- Product detail page must fetch product + ACTIVE variations.
+- If product has only 1 active variation: auto-select and hide variation chooser.
+- If product has >1 active variations: require user selection before add-to-cart.
+
+VARIATION TRUTH RULES (IMPORTANT):
+
+- Every variation has its own price and its own image.
+- Use variation.price as the displayed and charged price.
+- Use variation.image_url as the displayed image.
+- Product image (products.image_url) may exist only as optional fallback:
+  - displayImage = variation.image_url ?? product.image_url
+  - but the expectation is that variation.image_url is present for all purchasable variations.
 
 UI RULES:
 
 - Product listing shows product once (no duplication for variations).
-- Product details show image as: variation.image_url ?? product.image_url.
-- Cart item image uses the same logic.
+- Product details show:
+  - image: selectedVariation.image_url (fallback to product.image_url only if needed)
+  - price: selectedVariation.price
+- Cart item uses:
+  - variationId, variationName, variation.price
+  - image: selectedVariation.image_url (fallback only if needed)
+
+ADMIN PANEL RULES:
+
+- Provide an admin area to manage catalog and orders:
+  - Categories CRUD (incl. parent_id for subcategories)
+  - Products CRUD (base product data)
+  - Product Variations CRUD (price + image per variation; activate/deactivate)
+  - Orders list + order details (read-only or status updates depending on requirements)
+- Admin must be protected:
+  - Only authorized users can access admin routes (use Supabase auth + role/claim or allowlist).
+- Admin features must not leak to public routes.
 
 ENGINEERING RULES:
 
@@ -32,4 +58,4 @@ ENGINEERING RULES:
 - Implement SR/EN translations and hreflang; SEO basics: meta, sitemap, robots, schema.org/Product.
 - Provide code that is production-ready, typed, and easy to maintain.
 
-When uncertain, follow the README spec and document assumptions in code comments.
+When uncertain, follow the README/spec and document assumptions in code comments.

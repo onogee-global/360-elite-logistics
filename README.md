@@ -9,8 +9,8 @@ Orders are saved to the database and automatically sent via email.
 
 The application is bilingual (Serbian / English) and SEO optimized.
 
-❗ **Admin panel is NOT included in this scope.**  
-Products, categories, and variations are managed directly in the database.
+✅ **Admin panel IS included in scope.**  
+Products, categories and variations are managed via the admin area.
 
 ---
 
@@ -34,10 +34,10 @@ Products, categories, and variations are managed directly in the database.
 - Each product represents a **single base item** (e.g. Chips)
 - Product fields:
   - Name (SR / EN)
-  - Default image (optional, used as fallback)
+  - Default image (optional fallback only)
   - Active / inactive status
 
-### Product Variations (Types)
+### Product Variations (Types) – Price & Image per Variation
 
 Each product can have **multiple variations (types)**.
 
@@ -58,31 +58,35 @@ Rules:
 
 - Variations belong to **one product**
 - Variations are **not separate products**
-- A product may have:
-  - Multiple variations, or
-  - A single default variation
+- Cart and orders operate on **variation level** (`variation_id`)
+
+✅ **Important rule (source of truth):**
+
+- **Each variation has its own `price` and its own `image_url`.**
+- UI shows the selected variation’s price and image.
 
 Each variation contains:
 
 - Name (SR / EN)
-- Price (can differ per variation)
-- Image (optional; overrides product image when selected)
+- Price (required)
+- Image (required)
 - Active / inactive status
 
 ---
 
 ### Product Listing Behavior
 
-- Products are listed **once** in the shop
+- Products are listed **once** in the shop (no duplication for variations)
 - Variations are selectable **on product details page**
-- If a product has only one variation:
+- If a product has only one active variation:
   - Variation is auto-selected
   - No selection UI is required
-- Product image behavior:
-  - Listing uses product image
-  - Product details uses:
-    - selected variation image (if present), else
-    - product image (fallback)
+
+Image & price behavior:
+
+- Product details show:
+  - `selectedVariation.image_url` (fallback to product image only if needed)
+  - `selectedVariation.price`
 
 ---
 
@@ -97,8 +101,8 @@ Each variation contains:
 - Cart displays:
   - Product name
   - Selected variation (type)
-  - Image (variation image if present, else product image)
-  - Unit price
+  - Image (variation image)
+  - Unit price (variation price)
   - Quantity
   - Subtotal
 
@@ -112,7 +116,7 @@ Each variation contains:
   - Optional note
 - Checkout flow:
   1. Validate cart
-  2. Save order and items to database
+  2. Save order and items to database (variation-level)
   3. Send order via email
   4. Show confirmation message
 
@@ -124,6 +128,32 @@ Each variation contains:
 - Login
 - Logout
 - Implemented using **Supabase Auth**
+
+---
+
+## Admin Panel
+
+Admin panel is included to manage catalog and orders.
+
+### Admin Features
+
+- Categories CRUD (supports parent/child categories)
+- Products CRUD (base product entity)
+- Product Variations CRUD:
+  - create/update variation name (SR/EN)
+  - **set variation price (required)**
+  - **set variation image (required)**
+  - activate/deactivate variation
+- Orders:
+  - list orders
+  - order details view
+  - optional status update (if needed)
+
+### Admin Access Control
+
+- Admin routes must be protected
+- Only authorized admin users can access admin pages
+- Non-admin users must not be able to write to catalog tables
 
 ---
 
@@ -174,7 +204,7 @@ All pages support **Serbian and English** languages.
 - `category_id`
 - `name_sr`
 - `name_en`
-- `image_url`
+- `image_url` (optional fallback)
 - `active`
 
 ### product_variations
@@ -183,8 +213,8 @@ All pages support **Serbian and English** languages.
 - `product_id`
 - `name_sr`
 - `name_en`
-- `price`
-- `image_url`
+- `price` (required)
+- `image_url` (required)
 - `active`
 
 ### orders
@@ -204,13 +234,13 @@ All pages support **Serbian and English** languages.
 - `product_id`
 - `variation_id`
 - `qty`
-- `price`
+- `price` (unit price snapshot)
 
 ### users
 
 - Supabase Auth
 - Optional additional table:
-  - user_profiles (full_name, phone)
+  - user_profiles (full_name, phone, admin flag/role if used)
 
 ---
 
@@ -232,28 +262,27 @@ All pages support **Serbian and English** languages.
 
 ## Out of Scope ❌
 
-- Admin panel
 - Online payments
-- Product management UI
-- Order management UI
 - Analytics dashboard
+- Multi-warehouse logistics logic (if not specified)
+- Anything not listed under Core Features / Admin Panel
 
 ---
 
 ## Development Notes for Cursor
 
 - Supabase is the **single source of truth**
-- Products and variations are **seeded manually**
-- Cart and orders operate on **variation level**
+- Catalog writes happen only via **Admin Panel** (authorized admins)
+- Public shop is read-only for catalog data
+- Cart and orders operate strictly on **variation level**
 - Clean, reusable component structure
-- No admin-related logic
 - All secrets stored in environment variables
 
 ---
 
 ## Delivery Timeline
 
-Estimated duration: **20 working days**
+Estimated duration: **20 working days** (adjust if admin scope expands)
 
 Phases:
 
@@ -261,8 +290,8 @@ Phases:
 2. Shop, cart & product details
 3. Variation selection logic
 4. Checkout & email system
-5. Static pages & translations
-6. SEO optimization & deployment
+5. Admin panel (catalog + orders)
+6. Static pages, translations, SEO, testing & deployment
 
 ---
 
@@ -278,5 +307,5 @@ Phases:
 
 This document represents the **final agreed project scope**.
 
-Any feature not explicitly listed (admin panel, payments, dashboards)  
+Any feature not explicitly listed (payments, dashboards, extra modules)  
 is considered **out of scope** and requires a separate agreement.
