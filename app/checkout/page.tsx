@@ -16,6 +16,7 @@ import { CreditCard, Banknote, Package, MapPin } from "lucide-react";
 import Image from "next/image";
 import { useLocale } from "@/lib/locale-context";
 import { supabase } from "@/lib/supabase";
+import { createOrder } from "@/lib/supabase";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -84,22 +85,71 @@ export default function CheckoutPage() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate order processing
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const { data } = await supabase.auth.getUser();
+      const user = data.user;
+      if (!user) {
+        router.replace(`/login?redirect=${encodeURIComponent("/checkout")}`);
+        return;
+      }
 
-    // Create order ID
-    const orderId = `ORD-${Date.now()}`;
+      // Build order payload
+      const orderItems = items.map((item) => {
+        const basePrice = item.variation.price;
+        const finalUnit =
+          item.product.discount && item.product.discount > 0
+            ? basePrice * (1 - item.product.discount / 100)
+            : basePrice;
+        const variationName =
+          locale === "en" ? item.variation.nameEn : item.variation.name;
+        const productName =
+          locale === "en" ? item.product.nameEn : item.product.name;
+        return {
+          productId: item.product.id,
+          variationId: item.variation.id,
+          quantity: item.quantity,
+          unitPrice: Number(finalUnit.toFixed(2)),
+          name: productName,
+          variationName,
+        };
+      });
 
-    // Clear cart
-    clearCart();
+      const total = orderItems.reduce(
+        (sum, it) => sum + it.unitPrice * it.quantity,
+        0
+      );
 
-    toast({
-      title: "Porudžbina uspešna!",
-      description: `Vaša porudžbina #${orderId} je primljena.`,
-    });
+      const { orderId } = await createOrder({
+        userId: user.id,
+        customerName: formData.name,
+        customerEmail: formData.email,
+        customerPhone: formData.phone,
+        note: undefined,
+        total: Number(total.toFixed(2)),
+        address: {
+          street: formData.address,
+          city: formData.city,
+          zip: formData.zip,
+          country: "Srbija",
+        },
+        items: orderItems,
+      });
 
-    // Redirect to success page
-    router.push(`/checkout/success?orderId=${orderId}`);
+      clearCart();
+      toast({
+        title: "Porudžbina uspešna!",
+        description: `Vaša porudžbina #${orderId} je primljena.`,
+      });
+      router.push(`/checkout/success?orderId=${orderId}`);
+    } catch (err: any) {
+      toast({
+        title: "Greška pri poručivanju",
+        description: err?.message || "Pokušajte ponovo kasnije",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
