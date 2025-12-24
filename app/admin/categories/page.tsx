@@ -36,6 +36,7 @@ import {
   PaginationPrevious,
   PaginationNext,
 } from "@/components/ui/pagination";
+import { useLocale } from "@/lib/locale-context";
 
 interface CategoryFormValues {
   id?: string;
@@ -52,6 +53,7 @@ export default function AdminCategoriesPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CategoryFormValues | null>(null);
   const { toast } = useToast();
+  const { t } = useLocale();
   const [page, setPage] = useState(0);
   const pageSize = 20;
 
@@ -93,8 +95,8 @@ export default function AdminCategoriesPage() {
       } catch (e) {
         console.error(e);
         toast({
-          title: "Greška",
-          description: "Nije moguće učitati kategorije.",
+          title: t("toast.error"),
+          description: t("toast.loadFailed"),
           variant: "destructive",
         });
       } finally {
@@ -132,16 +134,16 @@ export default function AdminCategoriesPage() {
   };
 
   const onDelete = async (id: string) => {
-    if (!confirm("Da li ste sigurni da želite da obrišete kategoriju?")) return;
+    if (!confirm(t("admin.category.deleteConfirm"))) return;
     try {
       await deleteCategory(id);
       setCategories((prev) => prev.filter((c) => c.id !== id));
-      toast({ title: "Obrisano", description: "Kategorija je obrisana." });
+      toast({ title: t("toast.categoryDeleted") });
     } catch (e) {
       console.error(e);
       toast({
-        title: "Greška",
-        description: "Brisanje nije uspelo.",
+        title: t("toast.error"),
+        description: t("toast.deleteFailed"),
         variant: "destructive",
       });
     }
@@ -161,7 +163,7 @@ export default function AdminCategoriesPage() {
         setCategories((prev) =>
           prev.map((c) => (c.id === editing.id ? { ...c, ...editing } : c))
         );
-        toast({ title: "Sačuvano", description: "Kategorija je izmenjena." });
+        toast({ title: t("toast.categorySaved") });
       } else {
         const id = await createCategory({
           name: editing.name,
@@ -173,15 +175,15 @@ export default function AdminCategoriesPage() {
           { id, ...editing, subcategories: [] },
           ...prev,
         ]);
-        toast({ title: "Kreirano", description: "Kategorija je kreirana." });
+        toast({ title: t("toast.categoryCreated") });
       }
       setOpen(false);
       setEditing(null);
     } catch (e) {
       console.error(e);
       toast({
-        title: "Greška",
-        description: "Čuvanje nije uspelo.",
+        title: t("toast.error"),
+        description: t("toast.saveFailed"),
         variant: "destructive",
       });
     }
@@ -191,14 +193,16 @@ export default function AdminCategoriesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold mb-2">Kategorije</h1>
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">
+            {t("admin.categories.title")}
+          </h1>
           <p className="text-sm md:text-base text-muted-foreground">
-            Upravljajte kategorijama i podacima
+            {t("admin.categories.subtitle")}
           </p>
         </div>
         <Button className="w-full sm:w-auto" onClick={onCreate}>
           <Plus className="mr-2 h-4 w-4" />
-          Dodaj kategoriju
+          {t("admin.categories.add")}
         </Button>
       </div>
 
@@ -208,7 +212,7 @@ export default function AdminCategoriesPage() {
             <div className="relative w-full sm:flex-1 sm:max-w-sm">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Pretraži kategorije..."
+                placeholder={t("admin.searchCategories")}
                 className="pl-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -217,15 +221,17 @@ export default function AdminCategoriesPage() {
             {loading ? (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Spinner className="h-4 w-4" />
-                <span className="text-xs md:text-sm">Učitavanje…</span>
+                <span className="text-xs md:text-sm">{t("loading")}</span>
               </div>
             ) : (
               <p className="text-xs md:text-sm text-muted-foreground">
                 {total === 0
-                  ? "Nema rezultata"
-                  : `Prika\u017eano ${
+                  ? t("admin.list.noResults")
+                  : `${t("admin.list.shown")} ${
                       startIndex + 1
-                    }\u2013${endIndex} od ${total} kategorija`}
+                    }\u2013${endIndex} ${t("admin.list.of")} ${total} ${t(
+                      "categories"
+                    )}`}
               </p>
             )}
           </div>
@@ -234,13 +240,17 @@ export default function AdminCategoriesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="min-w-[180px]">Naziv (SR)</TableHead>
-                  <TableHead className="min-w-[180px]">Naziv (EN)</TableHead>
-                  <TableHead>Slug</TableHead>
-                  <TableHead className="hidden sm:table-cell">
-                    Ikonica
+                  <TableHead className="min-w-[180px]">
+                    {t("field.nameSr")}
                   </TableHead>
-                  <TableHead className="text-right">Akcije</TableHead>
+                  <TableHead className="min-w-[180px]">
+                    {t("field.nameEn")}
+                  </TableHead>
+                  <TableHead>{t("field.slug")}</TableHead>
+                  <TableHead className="hidden sm:table-cell">
+                    {t("field.icon")}
+                  </TableHead>
+                  <TableHead className="text-right">{t("actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -289,7 +299,7 @@ export default function AdminCategoriesPage() {
                     }}
                   />
                   <li className="px-2 text-sm text-muted-foreground self-center">
-                    Strana {page + 1} / {Math.max(1, pageCount)}
+                    {t("admin.list.page")} {page + 1} / {Math.max(1, pageCount)}
                   </li>
                   <PaginationNext
                     href="#"
@@ -315,13 +325,13 @@ export default function AdminCategoriesPage() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {editing?.id ? "Izmeni kategoriju" : "Nova kategorija"}
+              {editing?.id ? t("admin.category.edit") : t("admin.category.new")}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
-                <div className="text-sm font-medium">Naziv (SR)</div>
+                <div className="text-sm font-medium">{t("field.nameSr")}</div>
                 <Input
                   value={editing?.name ?? ""}
                   onChange={(e) =>
@@ -334,7 +344,7 @@ export default function AdminCategoriesPage() {
                 />
               </div>
               <div className="space-y-2">
-                <div className="text-sm font-medium">Naziv (EN)</div>
+                <div className="text-sm font-medium">{t("field.nameEn")}</div>
                 <Input
                   value={editing?.nameEn ?? ""}
                   onChange={(e) =>
@@ -347,7 +357,7 @@ export default function AdminCategoriesPage() {
                 />
               </div>
               <div className="space-y-2">
-                <div className="text-sm font-medium">Slug</div>
+                <div className="text-sm font-medium">{t("field.slug")}</div>
                 <Input
                   value={editing?.slug ?? ""}
                   onChange={(e) =>
@@ -360,9 +370,7 @@ export default function AdminCategoriesPage() {
                 />
               </div>
               <div className="space-y-2">
-                <div className="text-sm font-medium">
-                  Ikonica (emoji ili naziv)
-                </div>
+                <div className="text-sm font-medium">{t("field.iconHint")}</div>
                 <Input
                   value={editing?.icon ?? ""}
                   onChange={(e) =>
@@ -378,10 +386,10 @@ export default function AdminCategoriesPage() {
           </div>
           <DialogFooter className="mt-4">
             <DialogClose asChild>
-              <Button variant="outline">Otkaži</Button>
+              <Button variant="outline">{t("action.cancel")}</Button>
             </DialogClose>
             <Button onClick={onSubmit}>
-              {editing?.id ? "Sačuvaj" : "Kreiraj"}
+              {editing?.id ? t("action.save") : t("action.create")}
             </Button>
           </DialogFooter>
         </DialogContent>

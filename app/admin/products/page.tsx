@@ -51,10 +51,12 @@ import {
   PaginationNext,
 } from "@/components/ui/pagination";
 import { Spinner } from "@/components/ui/spinner";
+import { useLocale } from "@/lib/locale-context";
 
 export default function AdminProductsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
+  const { t } = useLocale();
   const [items, setItems] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -80,8 +82,8 @@ export default function AdminProductsPage() {
       } catch (e) {
         console.error(e);
         toast({
-          title: "Greška",
-          description: "Nije moguće učitati podatke.",
+          title: t("toast.error"),
+          description: t("toast.loadFailed"),
           variant: "destructive",
         });
       } finally {
@@ -155,19 +157,17 @@ export default function AdminProductsPage() {
   };
 
   const handleDelete = async (productId: string, productName: string) => {
-    if (!confirm(`Obrisati proizvod "${productName}"?`)) return;
+    if (!confirm(`${t("admin.product.deleteConfirm")} "${productName}"?`))
+      return;
     try {
       await deleteProduct(productId);
       setItems((prev) => prev.filter((p) => p.id !== productId));
-      toast({
-        title: "Proizvod obrisan",
-        description: `${productName} je uspešno obrisan`,
-      });
+      toast({ title: t("toast.productDeleted") });
     } catch (e) {
       console.error(e);
       toast({
-        title: "Greška",
-        description: "Brisanje nije uspelo.",
+        title: t("toast.error"),
+        description: t("toast.deleteFailed"),
         variant: "destructive",
       });
     }
@@ -181,8 +181,7 @@ export default function AdminProductsPage() {
       for (const v of activeVariations) {
         if (!v.name || !v.nameEn) {
           toast({
-            title: "Nedostaje naziv varijacije",
-            description: "Popunite nazive varijacije na srpskom i engleskom.",
+            title: t("admin.variant.missingName"),
             variant: "destructive",
           });
           return;
@@ -193,16 +192,14 @@ export default function AdminProductsPage() {
           v.price <= 0
         ) {
           toast({
-            title: "Neispravna cena",
-            description: "Cena varijacije mora biti veća od nule.",
+            title: t("admin.variant.invalidPrice"),
             variant: "destructive",
           });
           return;
         }
         if (!v.imageUrl) {
           toast({
-            title: "Nedostaje slika varijacije",
-            description: "Svaka varijacija mora imati svoju sliku.",
+            title: t("admin.variant.missingImage"),
             variant: "destructive",
           });
           return;
@@ -249,7 +246,7 @@ export default function AdminProductsPage() {
             v.id = newId;
           }
         }
-        toast({ title: "Sačuvano", description: "Proizvod je izmenjen." });
+        toast({ title: t("toast.productSaved") });
       } else {
         const id = await createProduct({
           name: editing.name,
@@ -281,7 +278,7 @@ export default function AdminProductsPage() {
           const newId = await createProductVariation(payload);
           v.id = newId;
         }
-        toast({ title: "Kreirano", description: "Proizvod je kreiran." });
+        toast({ title: t("toast.productCreated") });
       }
       setOpen(false);
       setEditing(null);
@@ -289,8 +286,8 @@ export default function AdminProductsPage() {
     } catch (e) {
       console.error(e);
       toast({
-        title: "Greška",
-        description: "Čuvanje nije uspelo.",
+        title: t("toast.error"),
+        description: t("toast.saveFailed"),
         variant: "destructive",
       });
     }
@@ -300,14 +297,16 @@ export default function AdminProductsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold mb-2">Proizvodi</h1>
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">
+            {t("admin.products.title")}
+          </h1>
           <p className="text-sm md:text-base text-muted-foreground">
-            Upravljajte proizvodima u vašoj prodavnici
+            {t("admin.products.subtitle")}
           </p>
         </div>
         <Button className="w-full sm:w-auto" onClick={startCreate}>
           <Plus className="mr-2 h-4 w-4" />
-          Dodaj proizvod
+          {t("admin.products.add")}
         </Button>
       </div>
 
@@ -317,7 +316,7 @@ export default function AdminProductsPage() {
             <div className="relative w-full sm:flex-1 sm:max-w-sm">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Pretraži proizvode..."
+                placeholder={t("admin.searchProducts")}
                 className="pl-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -326,15 +325,15 @@ export default function AdminProductsPage() {
             {loading ? (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Spinner className="h-4 w-4" />
-                <span className="text-xs md:text-sm">Učitavanje…</span>
+                <span className="text-xs md:text-sm">{t("loading")}</span>
               </div>
             ) : (
               <p className="text-xs md:text-sm text-muted-foreground">
                 {total === 0
-                  ? "Nema rezultata"
-                  : `Prikazano ${
-                      startIndex + 1
-                    }–${endIndex} od ${total} proizvoda`}
+                  ? t("admin.list.noResults")
+                  : `${t("admin.list.shown")} ${startIndex + 1}–${endIndex} ${t(
+                      "admin.list.of"
+                    )} ${total} ${t("admin.products.countLabel")}`}
               </p>
             )}
           </div>
@@ -343,13 +342,17 @@ export default function AdminProductsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[60px] md:w-[80px]">Slika</TableHead>
-                  <TableHead className="min-w-[150px]">Naziv</TableHead>
-                  <TableHead className="hidden sm:table-cell">
-                    Kategorija
+                  <TableHead className="w-[60px] md:w-[80px]">
+                    {t("field.image") ?? "Image"}
                   </TableHead>
-                  <TableHead>Cena</TableHead>
-                  <TableHead className="text-right">Akcije</TableHead>
+                  <TableHead className="min-w-[150px]">
+                    {t("field.name")}
+                  </TableHead>
+                  <TableHead className="hidden sm:table-cell">
+                    {t("field.category")}
+                  </TableHead>
+                  <TableHead>{t("price")}</TableHead>
+                  <TableHead className="text-right">{t("actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -444,7 +447,7 @@ export default function AdminProductsPage() {
                     }}
                   />
                   <li className="px-2 text-sm text-muted-foreground self-center">
-                    Strana {page} / {Math.max(1, pageCount)}
+                    {t("admin.list.page")} {page} / {Math.max(1, pageCount)}
                   </li>
                   <PaginationNext
                     href="#"
@@ -470,13 +473,13 @@ export default function AdminProductsPage() {
         <DialogContent className="w-[80vw] !w-[80vw] max-w-none sm:max-w-none h-[60vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editing?.id ? "Izmeni proizvod" : "Novi proizvod"}
+              {editing?.id ? t("admin.product.edit") : t("admin.product.new")}
             </DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-3">
               <div className="space-y-1.5">
-                <Label>Naziv (SR)</Label>
+                <Label>{t("field.nameSr")}</Label>
                 <Input
                   value={editing?.name ?? ""}
                   onChange={(e) =>
@@ -489,7 +492,7 @@ export default function AdminProductsPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Naziv (EN)</Label>
+                <Label>{t("field.nameEn")}</Label>
                 <Input
                   value={editing?.nameEn ?? ""}
                   onChange={(e) =>
@@ -502,7 +505,7 @@ export default function AdminProductsPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Opis (SR)</Label>
+                <Label>{t("field.descriptionSr")}</Label>
                 <Textarea
                   value={editing?.description ?? ""}
                   onChange={(e) =>
@@ -515,7 +518,7 @@ export default function AdminProductsPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Opis (EN)</Label>
+                <Label>{t("field.descriptionEn")}</Label>
                 <Textarea
                   value={editing?.descriptionEn ?? ""}
                   onChange={(e) =>
@@ -535,11 +538,11 @@ export default function AdminProductsPage() {
                 onChange={(url) =>
                   setEditing((prev: any) => ({ ...prev, image: url }))
                 }
-                label="Slika proizvoda (prevuci & pusti)"
+                label={t("field.productImage") ?? "Product image (drag & drop)"}
               />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Kategorija</Label>
+                  <Label>{t("field.category")}</Label>
                   <Select
                     value={editing?.categoryId ?? ""}
                     onValueChange={(val) =>
@@ -547,7 +550,9 @@ export default function AdminProductsPage() {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Odaberite" />
+                      <SelectValue
+                        placeholder={t("common.select") ?? "Select"}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {categories.map((c) => (
@@ -561,7 +566,7 @@ export default function AdminProductsPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Osnovna cena</Label>
+                  <Label>{t("field.basePrice")}</Label>
                   <Input
                     type="number"
                     step="0.01"
@@ -579,7 +584,7 @@ export default function AdminProductsPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Popust (%)</Label>
+                  <Label>{t("field.discountPercent")}</Label>
                   <Input
                     type="number"
                     min={0}
@@ -598,14 +603,15 @@ export default function AdminProductsPage() {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                Napomena: Cena i slika za naplatu definišu se na varijacijama
-                proizvoda (tipovima). Ovde je slika samo kao fallback.
+                {t("admin.variant.note")}
               </p>
             </div>
           </div>
           <div className="mt-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-semibold">Varijacije (tipovi)</h3>
+              <h3 className="text-base font-semibold">
+                {t("admin.variations.title") ?? "Variations (types)"}
+              </h3>
               <Button
                 variant="outline"
                 onClick={() =>
@@ -625,14 +631,13 @@ export default function AdminProductsPage() {
                   ])
                 }
               >
-                + Dodaj varijaciju
+                {t("admin.variant.add") ?? "+ Add variation"}
               </Button>
             </div>
             <div className="space-y-4">
               {variations.length === 0 && (
                 <p className="text-sm text-muted-foreground">
-                  Još nema varijacija. Dodajte bar jednu aktivnu varijaciju sa
-                  cenom i slikom.
+                  {t("admin.variations.empty") ?? "No variations yet."}
                 </p>
               )}
               {variations.map((v, idx) => (
@@ -640,7 +645,7 @@ export default function AdminProductsPage() {
                   <CardContent className="p-4 space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-1.5">
-                        <Label>Naziv (SR)</Label>
+                        <Label>{t("field.nameSr")}</Label>
                         <Input
                           value={v.name}
                           placeholder="npr. Paprika / 1L / Crvena"
@@ -655,7 +660,7 @@ export default function AdminProductsPage() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label>Naziv (EN)</Label>
+                        <Label>{t("field.nameEn")}</Label>
                         <Input
                           value={v.nameEn}
                           placeholder="e.g. Paprika / 1L / Red"
@@ -670,7 +675,7 @@ export default function AdminProductsPage() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label>Opis varijacije (SR)</Label>
+                        <Label>{t("field.descriptionSr")}</Label>
                         <Textarea
                           value={v.description ?? ""}
                           onChange={(e) => {
@@ -685,7 +690,7 @@ export default function AdminProductsPage() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label>Opis varijacije (EN)</Label>
+                        <Label>{t("field.descriptionEn")}</Label>
                         <Textarea
                           value={v.descriptionEn ?? ""}
                           onChange={(e) => {
@@ -702,7 +707,7 @@ export default function AdminProductsPage() {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-1.5">
-                        <Label>Cena (RSD)</Label>
+                        <Label>{`${t("price")} (RSD)`}</Label>
                         <Input
                           type="number"
                           step="0.01"
@@ -719,7 +724,7 @@ export default function AdminProductsPage() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label>Popust varijacije (%)</Label>
+                        <Label>{t("field.discountPercent")}</Label>
                         <Input
                           type="number"
                           min={0}
@@ -752,7 +757,7 @@ export default function AdminProductsPage() {
                           )
                         )
                       }
-                      label="Slika varijacije (obavezno)"
+                      label={t("admin.variant.imageRequired")}
                     />
                     <div className="flex justify-end">
                       <Button
@@ -768,7 +773,7 @@ export default function AdminProductsPage() {
                           );
                         }}
                       >
-                        Ukloni varijaciju
+                        {t("admin.variant.remove")}
                       </Button>
                     </div>
                   </CardContent>
@@ -778,10 +783,10 @@ export default function AdminProductsPage() {
           </div>
           <DialogFooter className="mt-4">
             <DialogClose asChild>
-              <Button variant="outline">Otkaži</Button>
+              <Button variant="outline">{t("action.cancel")}</Button>
             </DialogClose>
             <Button onClick={onSubmit}>
-              {editing?.id ? "Sačuvaj" : "Kreiraj"}
+              {editing?.id ? t("action.save") : t("action.create")}
             </Button>
           </DialogFooter>
         </DialogContent>
