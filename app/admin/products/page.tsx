@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,35 +13,159 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { products, categories } from "@/lib/mock-data";
 import { Search, Plus, Edit, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
+import {
+  createProduct,
+  deleteProduct,
+  fetchCategoriesAdmin,
+  fetchProductsAdmin,
+  updateProduct,
+} from "@/lib/supabase";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import ImageDropzone from "@/components/admin/ImageDropzone";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function AdminProductsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
+  const [items, setItems] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<any | null>(null);
 
-  const filteredProducts = products.filter((product) => {
-    const category = categories.find((c) => c.id === product.categoryId);
-    const categoryName = category?.name || "";
-    const subcategory = category?.subcategories?.find(
-      (s) => s.id === product.subcategoryId
-    );
-    const subcategoryName = subcategory?.name || "";
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoading(true);
+        const [prods, cats] = await Promise.all([fetchProductsAdmin(), fetchCategoriesAdmin()]);
+        if (mounted) {
+          setItems(prods);
+          setCategories(cats);
+        }
+      } catch (e) {
+        console.error(e);
+        toast({
+          title: "Greška",
+          description: "Nije moguće učitati podatke.",
+          variant: "destructive",
+        });
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [toast]);
 
-    return (
-      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      categoryName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      subcategoryName.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  });
-
-  const handleDelete = (productId: string, productName: string) => {
-    toast({
-      title: "Proizvod obrisan",
-      description: `${productName} je uspešno obrisan`,
+  const filteredProducts = useMemo(() => {
+    const q = searchQuery.toLowerCase();
+    return items.filter((product) => {
+      const category = categories.find((c) => c.id === product.categoryId);
+      const categoryName = category?.name || "";
+      const subcategory = category?.subcategories?.find(
+        (s: any) => s.id === product.subcategoryId
+      );
+      const subcategoryName = subcategory?.name || "";
+      return (
+        product.name.toLowerCase().includes(q) ||
+        categoryName.toLowerCase().includes(q) ||
+        subcategoryName.toLowerCase().includes(q)
+      );
     });
+  }, [items, categories, searchQuery]);
+
+  const startCreate = () => {
+    setEditing({
+      name: "",
+      nameEn: "",
+      description: "",
+      descriptionEn: "",
+      image: "",
+      categoryId: "",
+      subcategoryId: "",
+      discount: undefined,
+    });
+    setOpen(true);
+  };
+
+  const startEdit = (product: any) => {
+    setEditing({ ...product });
+    setOpen(true);
+  };
+
+  const handleDelete = async (productId: string, productName: string) => {
+    if (!confirm(`Obrisati proizvod "${productName}"?`)) return;
+    try {
+      await deleteProduct(productId);
+      setItems((prev) => prev.filter((p) => p.id !== productId));
+      toast({
+        title: "Proizvod obrisan",
+        description: `${productName} je uspešno obrisan`,
+      });
+    } catch (e) {
+      console.error(e);
+      toast({
+        title: "Greška",
+        description: "Brisanje nije uspelo.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const onSubmit = async () => {
+    if (!editing) return;
+    try {
+      if (editing.id) {
+        await updateProduct({
+          id: editing.id,
+          name: editing.name,
+          nameEn: editing.nameEn,
+          description: editing.description,
+          descriptionEn: editing.descriptionEn,
+          image: editing.image,
+          categoryId: editing.categoryId,
+          subcategoryId: editing.subcategoryId || null,
+          discount: editing.discount ?? null,
+        });
+        setItems((prev) => prev.map((p) => (p.id === editing.id ? { ...p, ...editing } : p)));
+        toast({ title: "Sačuvano", description: "Proizvod je izmenjen." });
+      } else {
+        const id = await createProduct({
+          name: editing.name,
+          nameEn: editing.nameEn,
+          description: editing.description,
+          descriptionEn: editing.descriptionEn,
+          image: editing.image,
+          categoryId: editing.categoryId,
+          subcategoryId: editing.subcategoryId || null,
+          discount: editing.discount ?? null,
+        });
+        setItems((prev) => [{ id, ...editing }, ...prev]);
+        toast({ title: "Kreirano", description: "Proizvod je kreiran." });
+      }
+      setOpen(false);
+      setEditing(null);
+    } catch (e) {
+      console.error(e);
+      toast({
+        title: "Greška",
+        description: "Čuvanje nije uspelo.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -53,7 +177,7 @@ export default function AdminProductsPage() {
             Upravljajte proizvodima u vašoj prodavnici
           </p>
         </div>
-        <Button className="w-full sm:w-auto">
+        <Button className="w-full sm:w-auto" onClick={startCreate}>
           <Plus className="mr-2 h-4 w-4" />
           Dodaj proizvod
         </Button>
@@ -72,7 +196,7 @@ export default function AdminProductsPage() {
               />
             </div>
             <p className="text-xs md:text-sm text-muted-foreground">
-              Prikazano {filteredProducts.length} od {products.length} proizvoda
+              {loading ? "Učitavanje..." : `Prikazano ${filteredProducts.length} od ${items.length} proizvoda`}
             </p>
           </div>
 
@@ -99,7 +223,7 @@ export default function AdminProductsPage() {
                     (c) => c.id === product.categoryId
                   );
                   const subcategory = category?.subcategories?.find(
-                    (s) => s.id === product.subcategoryId
+                    (s: any) => s.id === product.subcategoryId
                   );
                   const categoryDisplay =
                     subcategory?.name || category?.name || "N/A";
@@ -177,6 +301,7 @@ export default function AdminProductsPage() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
+                            onClick={() => startEdit(product)}
                           >
                             <Edit className="h-3 w-3 md:h-4 md:w-4" />
                           </Button>
@@ -200,6 +325,110 @@ export default function AdminProductsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editing?.id ? "Izmeni proizvod" : "Novi proizvod"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label>Naziv (SR)</Label>
+                <Input
+                  value={editing?.name ?? ""}
+                  onChange={(e) => setEditing((prev: any) => ({ ...prev, name: e.target.value }))}
+                  placeholder="npr. Coca Cola 1.5L"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Naziv (EN)</Label>
+                <Input
+                  value={editing?.nameEn ?? ""}
+                  onChange={(e) => setEditing((prev: any) => ({ ...prev, nameEn: e.target.value }))}
+                  placeholder="e.g. Coca Cola 1.5L"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Opis (SR)</Label>
+                <Input
+                  value={editing?.description ?? ""}
+                  onChange={(e) => setEditing((prev: any) => ({ ...prev, description: e.target.value }))}
+                  placeholder="Opis proizvoda"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Opis (EN)</Label>
+                <Input
+                  value={editing?.descriptionEn ?? ""}
+                  onChange={(e) => setEditing((prev: any) => ({ ...prev, descriptionEn: e.target.value }))}
+                  placeholder="Product description"
+                />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <ImageDropzone
+                folder="products"
+                value={editing?.image}
+                onChange={(url) => setEditing((prev: any) => ({ ...prev, image: url }))}
+                label="Slika proizvoda (prevuci & pusti)"
+              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Kategorija</Label>
+                  <Select
+                    value={editing?.categoryId ?? ""}
+                    onValueChange={(val) => setEditing((prev: any) => ({ ...prev, categoryId: val }))}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Odaberite" /></SelectTrigger>
+                    <SelectContent>
+                      {categories.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Potkategorija</Label>
+                  <Select
+                    value={editing?.subcategoryId ?? ""}
+                    onValueChange={(val) => setEditing((prev: any) => ({ ...prev, subcategoryId: val }))}
+                  >
+                    <SelectTrigger><SelectValue placeholder="(opciono)" /></SelectTrigger>
+                    <SelectContent>
+                      {(categories.find((c) => c.id === editing?.categoryId)?.subcategories ?? []).map((s: any) => (
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Popust (%)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={90}
+                    value={editing?.discount ?? ""}
+                    onChange={(e) => setEditing((prev: any) => ({ ...prev, discount: e.target.value ? Number(e.target.value) : undefined }))}
+                    placeholder="npr. 10"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Napomena: Cena i slika za naplatu definišu se na varijacijama proizvoda (tipovima). Ovde je slika samo kao fallback.
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="mt-4">
+            <DialogClose asChild>
+              <Button variant="outline">Otkaži</Button>
+            </DialogClose>
+            <Button onClick={onSubmit}>{editing?.id ? "Sačuvaj" : "Kreiraj"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

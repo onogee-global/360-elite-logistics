@@ -1,9 +1,13 @@
-import type React from "react"
-import Link from "next/link"
-import { LayoutDashboard, Package, ShoppingCart, ArrowLeft } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import type React from "react";
+import Link from "next/link";
+import { FolderTree, Package, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <div className="min-h-screen bg-muted/30">
       {/* Admin Header */}
@@ -16,7 +20,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </div>
               <div>
                 <h1 className="text-xl font-bold">MAXI Admin</h1>
-                <p className="text-sm text-muted-foreground">Administratorska kontrolna tabla</p>
+                <p className="text-sm text-muted-foreground">
+                  Administratorska kontrolna tabla
+                </p>
               </div>
             </div>
             <Button variant="outline" asChild>
@@ -35,11 +41,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <aside className="w-64 flex-shrink-0">
             <nav className="space-y-2 sticky top-8">
               <Link
-                href="/admin"
+                href="/admin/categories"
                 className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-background transition-colors"
               >
-                <LayoutDashboard className="h-5 w-5" />
-                <span className="font-medium">Kontrolna tabla</span>
+                <FolderTree className="h-5 w-5" />
+                <span className="font-medium">Kategorije</span>
               </Link>
               <Link
                 href="/admin/products"
@@ -47,13 +53,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 <Package className="h-5 w-5" />
                 <span className="font-medium">Proizvodi</span>
-              </Link>
-              <Link
-                href="/admin/orders"
-                className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-background transition-colors"
-              >
-                <ShoppingCart className="h-5 w-5" />
-                <span className="font-medium">Porudžbine</span>
               </Link>
             </nav>
           </aside>
@@ -63,5 +62,5 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </div>
     </div>
-  )
+  );
 }
