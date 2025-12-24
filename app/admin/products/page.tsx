@@ -12,7 +12,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Search, Plus, Edit, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +21,10 @@ import {
   fetchCategoriesAdmin,
   fetchProductsAdmin,
   updateProduct,
+  fetchProductVariationsAdmin,
+  createProductVariation,
+  updateProductVariation,
+  deleteProductVariation,
 } from "@/lib/supabase";
 import {
   Dialog,
@@ -33,7 +36,14 @@ import {
 } from "@/components/ui/dialog";
 import ImageDropzone from "@/components/admin/ImageDropzone";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function AdminProductsPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -43,13 +53,17 @@ export default function AdminProductsPage() {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
+  const [variations, setVariations] = useState<any[]>([]);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
         setLoading(true);
-        const [prods, cats] = await Promise.all([fetchProductsAdmin(), fetchCategoriesAdmin()]);
+        const [prods, cats] = await Promise.all([
+          fetchProductsAdmin(),
+          fetchCategoriesAdmin(),
+        ]);
         if (mounted) {
           setItems(prods);
           setCategories(cats);
@@ -75,14 +89,9 @@ export default function AdminProductsPage() {
     return items.filter((product) => {
       const category = categories.find((c) => c.id === product.categoryId);
       const categoryName = category?.name || "";
-      const subcategory = category?.subcategories?.find(
-        (s: any) => s.id === product.subcategoryId
-      );
-      const subcategoryName = subcategory?.name || "";
       return (
         product.name.toLowerCase().includes(q) ||
-        categoryName.toLowerCase().includes(q) ||
-        subcategoryName.toLowerCase().includes(q)
+        categoryName.toLowerCase().includes(q)
       );
     });
   }, [items, categories, searchQuery]);
@@ -95,15 +104,27 @@ export default function AdminProductsPage() {
       descriptionEn: "",
       image: "",
       categoryId: "",
-      subcategoryId: "",
+      // subcategory removed
+      price: undefined,
       discount: undefined,
     });
+    setVariations([]);
     setOpen(true);
   };
 
   const startEdit = (product: any) => {
-    setEditing({ ...product });
-    setOpen(true);
+    (async () => {
+      setEditing({ ...product });
+      try {
+        const vars = await fetchProductVariationsAdmin(product.id);
+        setVariations(vars);
+      } catch (e) {
+        console.error(e);
+        setVariations([]);
+      } finally {
+        setOpen(true);
+      }
+    })();
   };
 
   const handleDelete = async (productId: string, productName: string) => {
@@ -128,6 +149,38 @@ export default function AdminProductsPage() {
   const onSubmit = async () => {
     if (!editing) return;
     try {
+      // Validate variations only if provided
+      const activeVariations = variations.filter((v) => !v._deleted);
+      for (const v of activeVariations) {
+        if (!v.name || !v.nameEn) {
+          toast({
+            title: "Nedostaje naziv varijacije",
+            description: "Popunite nazive varijacije na srpskom i engleskom.",
+            variant: "destructive",
+          });
+          return;
+        }
+        if (
+          !(typeof v.price === "number") ||
+          Number.isNaN(v.price) ||
+          v.price <= 0
+        ) {
+          toast({
+            title: "Neispravna cena",
+            description: "Cena varijacije mora biti veća od nule.",
+            variant: "destructive",
+          });
+          return;
+        }
+        if (!v.imageUrl) {
+          toast({
+            title: "Nedostaje slika varijacije",
+            description: "Svaka varijacija mora imati svoju sliku.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
       if (editing.id) {
         await updateProduct({
           id: editing.id,
@@ -137,10 +190,38 @@ export default function AdminProductsPage() {
           descriptionEn: editing.descriptionEn,
           image: editing.image,
           categoryId: editing.categoryId,
-          subcategoryId: editing.subcategoryId || null,
+          price: editing.price,
           discount: editing.discount ?? null,
         });
-        setItems((prev) => prev.map((p) => (p.id === editing.id ? { ...p, ...editing } : p)));
+        setItems((prev) =>
+          prev.map((p) => (p.id === editing.id ? { ...p, ...editing } : p))
+        );
+        // Sync variations
+        for (const v of variations) {
+          if (v._deleted && v.id) {
+            await deleteProductVariation(v.id);
+            continue;
+          }
+          const payload: any = {
+            productId: editing.id,
+            name: v.name,
+            nameEn: v.nameEn,
+            price: Number(v.price),
+            imageUrl: v.imageUrl,
+            description: v.description ?? undefined,
+            descriptionEn: v.descriptionEn ?? undefined,
+            discount: typeof v.discount === "number" ? v.discount : undefined,
+          };
+          if (typeof v.isActive !== "undefined") {
+            payload.isActive = !!v.isActive;
+          }
+          if (v.id) {
+            await updateProductVariation({ id: v.id, ...payload });
+          } else if (!v._deleted) {
+            const newId = await createProductVariation(payload);
+            v.id = newId;
+          }
+        }
         toast({ title: "Sačuvano", description: "Proizvod je izmenjen." });
       } else {
         const id = await createProduct({
@@ -150,14 +231,34 @@ export default function AdminProductsPage() {
           descriptionEn: editing.descriptionEn,
           image: editing.image,
           categoryId: editing.categoryId,
-          subcategoryId: editing.subcategoryId || null,
+          price: editing.price,
           discount: editing.discount ?? null,
         });
         setItems((prev) => [{ id, ...editing }, ...prev]);
+        // Create variations for new product
+        for (const v of variations) {
+          if (v._deleted) continue;
+          const payload: any = {
+            productId: id,
+            name: v.name,
+            nameEn: v.nameEn,
+            price: Number(v.price),
+            imageUrl: v.imageUrl,
+            description: v.description ?? undefined,
+            descriptionEn: v.descriptionEn ?? undefined,
+            discount: typeof v.discount === "number" ? v.discount : undefined,
+          };
+          if (typeof v.isActive !== "undefined") {
+            payload.isActive = !!v.isActive;
+          }
+          const newId = await createProductVariation(payload);
+          v.id = newId;
+        }
         toast({ title: "Kreirano", description: "Proizvod je kreiran." });
       }
       setOpen(false);
       setEditing(null);
+      setVariations([]);
     } catch (e) {
       console.error(e);
       toast({
@@ -196,7 +297,9 @@ export default function AdminProductsPage() {
               />
             </div>
             <p className="text-xs md:text-sm text-muted-foreground">
-              {loading ? "Učitavanje..." : `Prikazano ${filteredProducts.length} od ${items.length} proizvoda`}
+              {loading
+                ? "Učitavanje..."
+                : `Prikazano ${filteredProducts.length} od ${items.length} proizvoda`}
             </p>
           </div>
 
@@ -210,10 +313,6 @@ export default function AdminProductsPage() {
                     Kategorija
                   </TableHead>
                   <TableHead>Cena</TableHead>
-                  <TableHead className="hidden md:table-cell">
-                    Pakovanje
-                  </TableHead>
-                  <TableHead className="hidden lg:table-cell">Status</TableHead>
                   <TableHead className="text-right">Akcije</TableHead>
                 </TableRow>
               </TableHeader>
@@ -222,11 +321,7 @@ export default function AdminProductsPage() {
                   const category = categories.find(
                     (c) => c.id === product.categoryId
                   );
-                  const subcategory = category?.subcategories?.find(
-                    (s: any) => s.id === product.subcategoryId
-                  );
-                  const categoryDisplay =
-                    subcategory?.name || category?.name || "N/A";
+                  const categoryDisplay = category?.name || "N/A";
                   const basePrice =
                     product.variations && product.variations.length > 0
                       ? Math.min(...product.variations.map((v: any) => v.price))
@@ -236,10 +331,6 @@ export default function AdminProductsPage() {
                   const finalPrice = hasDiscount
                     ? basePrice * (1 - discountPct / 100)
                     : basePrice;
-                  const unitDisplay =
-                    product.variations && product.variations.length > 0
-                      ? (product.variations[0] as any).unit ?? ""
-                      : product.unit ?? "";
 
                   return (
                     <TableRow key={product.id}>
@@ -275,26 +366,6 @@ export default function AdminProductsPage() {
                           </span>
                         )}
                       </TableCell>
-                      <TableCell className="hidden md:table-cell text-sm">
-                        {unitDisplay}
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        {product.inStock ? (
-                          <Badge
-                            variant="outline"
-                            className="bg-primary/10 text-primary border-primary/20 text-xs"
-                          >
-                            Na stanju
-                          </Badge>
-                        ) : (
-                          <Badge
-                            variant="outline"
-                            className="bg-destructive/10 text-destructive border-destructive/20 text-xs"
-                          >
-                            Nema na stanju
-                          </Badge>
-                        )}
-                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           <Button
@@ -326,18 +397,31 @@ export default function AdminProductsPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
-        <DialogContent className="max-w-2xl">
+      <Dialog
+        open={open}
+        onOpenChange={(o) => {
+          setOpen(o);
+          if (!o) setEditing(null);
+        }}
+      >
+        <DialogContent className="w-[80vw] !w-[80vw] max-w-none sm:max-w-none h-[60vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editing?.id ? "Izmeni proizvod" : "Novi proizvod"}</DialogTitle>
+            <DialogTitle>
+              {editing?.id ? "Izmeni proizvod" : "Novi proizvod"}
+            </DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <Label>Naziv (SR)</Label>
                 <Input
                   value={editing?.name ?? ""}
-                  onChange={(e) => setEditing((prev: any) => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) =>
+                    setEditing((prev: any) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
                   placeholder="npr. Coca Cola 1.5L"
                 />
               </div>
@@ -345,23 +429,38 @@ export default function AdminProductsPage() {
                 <Label>Naziv (EN)</Label>
                 <Input
                   value={editing?.nameEn ?? ""}
-                  onChange={(e) => setEditing((prev: any) => ({ ...prev, nameEn: e.target.value }))}
+                  onChange={(e) =>
+                    setEditing((prev: any) => ({
+                      ...prev,
+                      nameEn: e.target.value,
+                    }))
+                  }
                   placeholder="e.g. Coca Cola 1.5L"
                 />
               </div>
               <div className="space-y-1.5">
                 <Label>Opis (SR)</Label>
-                <Input
+                <Textarea
                   value={editing?.description ?? ""}
-                  onChange={(e) => setEditing((prev: any) => ({ ...prev, description: e.target.value }))}
+                  onChange={(e) =>
+                    setEditing((prev: any) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
                   placeholder="Opis proizvoda"
                 />
               </div>
               <div className="space-y-1.5">
                 <Label>Opis (EN)</Label>
-                <Input
+                <Textarea
                   value={editing?.descriptionEn ?? ""}
-                  onChange={(e) => setEditing((prev: any) => ({ ...prev, descriptionEn: e.target.value }))}
+                  onChange={(e) =>
+                    setEditing((prev: any) => ({
+                      ...prev,
+                      descriptionEn: e.target.value,
+                    }))
+                  }
                   placeholder="Product description"
                 />
               </div>
@@ -370,7 +469,9 @@ export default function AdminProductsPage() {
               <ImageDropzone
                 folder="products"
                 value={editing?.image}
-                onChange={(url) => setEditing((prev: any) => ({ ...prev, image: url }))}
+                onChange={(url) =>
+                  setEditing((prev: any) => ({ ...prev, image: url }))
+                }
                 label="Slika proizvoda (prevuci & pusti)"
               />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -378,26 +479,18 @@ export default function AdminProductsPage() {
                   <Label>Kategorija</Label>
                   <Select
                     value={editing?.categoryId ?? ""}
-                    onValueChange={(val) => setEditing((prev: any) => ({ ...prev, categoryId: val }))}
+                    onValueChange={(val) =>
+                      setEditing((prev: any) => ({ ...prev, categoryId: val }))
+                    }
                   >
-                    <SelectTrigger><SelectValue placeholder="Odaberite" /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Odaberite" />
+                    </SelectTrigger>
                     <SelectContent>
                       {categories.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Potkategorija</Label>
-                  <Select
-                    value={editing?.subcategoryId ?? ""}
-                    onValueChange={(val) => setEditing((prev: any) => ({ ...prev, subcategoryId: val }))}
-                  >
-                    <SelectTrigger><SelectValue placeholder="(opciono)" /></SelectTrigger>
-                    <SelectContent>
-                      {(categories.find((c) => c.id === editing?.categoryId)?.subcategories ?? []).map((s: any) => (
-                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -405,27 +498,228 @@ export default function AdminProductsPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
+                  <Label>Osnovna cena</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    value={editing?.price ?? ""}
+                    onChange={(e) =>
+                      setEditing((prev: any) => ({
+                        ...prev,
+                        price: e.target.value
+                          ? Number(e.target.value)
+                          : undefined,
+                      }))
+                    }
+                    placeholder="npr. 100.00"
+                  />
+                </div>
+                <div className="space-y-1.5">
                   <Label>Popust (%)</Label>
                   <Input
                     type="number"
                     min={0}
                     max={90}
                     value={editing?.discount ?? ""}
-                    onChange={(e) => setEditing((prev: any) => ({ ...prev, discount: e.target.value ? Number(e.target.value) : undefined }))}
+                    onChange={(e) =>
+                      setEditing((prev: any) => ({
+                        ...prev,
+                        discount: e.target.value
+                          ? Number(e.target.value)
+                          : undefined,
+                      }))
+                    }
                     placeholder="npr. 10"
                   />
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                Napomena: Cena i slika za naplatu definišu se na varijacijama proizvoda (tipovima). Ovde je slika samo kao fallback.
+                Napomena: Cena i slika za naplatu definišu se na varijacijama
+                proizvoda (tipovima). Ovde je slika samo kao fallback.
               </p>
+            </div>
+          </div>
+          <div className="mt-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-semibold">Varijacije (tipovi)</h3>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  setVariations((prev) => [
+                    ...prev,
+                    {
+                      id: undefined,
+                      name: "",
+                      nameEn: "",
+                      price: 0,
+                      imageUrl: "",
+                      description: "",
+                      descriptionEn: "",
+                      discount: undefined,
+                      _isNew: true,
+                    },
+                  ])
+                }
+              >
+                + Dodaj varijaciju
+              </Button>
+            </div>
+            <div className="space-y-4">
+              {variations.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  Još nema varijacija. Dodajte bar jednu aktivnu varijaciju sa
+                  cenom i slikom.
+                </p>
+              )}
+              {variations.map((v, idx) => (
+                <Card key={v.id ?? `new-${idx}`}>
+                  <CardContent className="p-4 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-1.5">
+                        <Label>Naziv (SR)</Label>
+                        <Input
+                          value={v.name}
+                          placeholder="npr. Paprika / 1L / Crvena"
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setVariations((prev) =>
+                              prev.map((pv, i) =>
+                                i === idx ? { ...pv, name: val } : pv
+                              )
+                            );
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Naziv (EN)</Label>
+                        <Input
+                          value={v.nameEn}
+                          placeholder="e.g. Paprika / 1L / Red"
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setVariations((prev) =>
+                              prev.map((pv, i) =>
+                                i === idx ? { ...pv, nameEn: val } : pv
+                              )
+                            );
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Opis varijacije (SR)</Label>
+                        <Textarea
+                          value={v.description ?? ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setVariations((prev) =>
+                              prev.map((pv, i) =>
+                                i === idx ? { ...pv, description: val } : pv
+                              )
+                            );
+                          }}
+                          placeholder="Kratak opis ukusa, boje ili veličine"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Opis varijacije (EN)</Label>
+                        <Textarea
+                          value={v.descriptionEn ?? ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setVariations((prev) =>
+                              prev.map((pv, i) =>
+                                i === idx ? { ...pv, descriptionEn: val } : pv
+                              )
+                            );
+                          }}
+                          placeholder="Short description of flavor, color or size"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-1.5">
+                        <Label>Cena (RSD)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={v.price}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setVariations((prev) =>
+                              prev.map((pv, i) =>
+                                i === idx ? { ...pv, price: Number(val) } : pv
+                              )
+                            );
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Popust varijacije (%)</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={90}
+                          value={v.discount ?? ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setVariations((prev) =>
+                              prev.map((pv, i) =>
+                                i === idx
+                                  ? {
+                                      ...pv,
+                                      discount: val ? Number(val) : undefined,
+                                    }
+                                  : pv
+                              )
+                            );
+                          }}
+                          placeholder="npr. 5"
+                        />
+                      </div>
+                    </div>
+                    <ImageDropzone
+                      folder="products"
+                      value={v.imageUrl}
+                      onChange={(url) =>
+                        setVariations((prev) =>
+                          prev.map((pv, i) =>
+                            i === idx ? { ...pv, imageUrl: url } : pv
+                          )
+                        )
+                      }
+                      label="Slika varijacije (obavezno)"
+                    />
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={() => {
+                          setVariations((prev) =>
+                            prev
+                              .map((pv, i) =>
+                                i === idx ? { ...pv, _deleted: true } : pv
+                              )
+                              .filter((x) => !x._deleted || x.id)
+                          );
+                        }}
+                      >
+                        Ukloni varijaciju
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </div>
           <DialogFooter className="mt-4">
             <DialogClose asChild>
               <Button variant="outline">Otkaži</Button>
             </DialogClose>
-            <Button onClick={onSubmit}>{editing?.id ? "Sačuvaj" : "Kreiraj"}</Button>
+            <Button onClick={onSubmit}>
+              {editing?.id ? "Sačuvaj" : "Kreiraj"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -142,6 +142,7 @@ export async function fetchProductsAdmin(): Promise<Product[]> {
       image,
       categoryId,
       subcategoryId,
+      price,
       discount
     `,
     )
@@ -162,6 +163,7 @@ export interface CreateProductInput {
   image?: string
   categoryId: string
   subcategoryId?: string
+  price?: number
   discount?: number
 }
 
@@ -176,6 +178,7 @@ export async function createProduct(input: CreateProductInput): Promise<string> 
       image: input.image ?? null,
       categoryId: input.categoryId,
       subcategoryId: input.subcategoryId ?? null,
+      price: typeof input.price === "number" ? input.price : null,
       discount: input.discount ?? null,
     })
     .select("id")
@@ -199,6 +202,7 @@ export async function updateProduct(input: UpdateProductInput): Promise<void> {
   if (typeof input.image !== "undefined") updates.image = input.image ?? null
   if (typeof input.categoryId !== "undefined") updates.categoryId = input.categoryId
   if (typeof input.subcategoryId !== "undefined") updates.subcategoryId = input.subcategoryId ?? null
+  if (typeof input.price !== "undefined") updates.price = typeof input.price === "number" ? input.price : null
   if (typeof input.discount !== "undefined") updates.discount = input.discount ?? null
 
   const { error } = await supabase.from("products").update(updates).eq("id", input.id)
@@ -260,6 +264,95 @@ export async function updateCategory(input: UpdateCategoryInput): Promise<void> 
   if (typeof input.icon !== "undefined") updates.icon = input.icon ?? null
   if (typeof input.parentId !== "undefined") updates.parent_id = input.parentId ?? null
   const { error } = await supabase.from("categories").update(updates).eq("id", input.id)
+  if (error) throw error
+}
+
+// ---- Product variations (admin CRUD) ----
+export interface CreateProductVariationInput {
+  productId: string
+  name: string
+  nameEn: string
+  price: number
+  imageUrl: string
+  isActive?: boolean
+  description?: string
+  descriptionEn?: string
+  discount?: number
+}
+
+export interface UpdateProductVariationInput extends Partial<CreateProductVariationInput> {
+  id: string
+}
+
+export async function fetchProductVariationsAdmin(productId: string): Promise<any[]> {
+  const { data, error } = await supabase
+    .from("product_variations")
+    .select("id, productId, name, nameEn, price, imageUrl, isActive, description, descriptionen, discount")
+    .eq("productId", productId)
+    .order("name", { ascending: true })
+    .returns<any[]>()
+  if (error || !data) {
+    throw error ?? new Error("Failed to fetch product variations")
+  }
+  return data.map((row) => ({
+    id: row.id,
+    productId: row.productId,
+    name: row.name,
+    nameEn: row.nameEn,
+    price: row.price,
+    imageUrl: row.imageUrl ?? "",
+    isActive: !!row.isActive,
+    // new optional fields
+    description: row.description ?? "",
+    descriptionEn: row.descriptionen ?? "",
+    discount: typeof row.discount === "number" ? row.discount : undefined,
+  })) as any[]
+}
+
+export async function createProductVariation(input: CreateProductVariationInput): Promise<string> {
+  const payload = {
+    productId: input.productId,
+    product_id: input.productId,
+    name: input.name,
+    nameEn: input.nameEn,
+    price: input.price,
+    imageUrl: input.imageUrl,
+    isActive: input.isActive ?? true,
+    description: (input as any).description ?? null,
+    descriptionen: (input as any).descriptionEn ?? null,
+    discount: (input as any).discount ?? null,
+  }
+  const { data, error } = await supabase
+    .from("product_variations")
+    .insert(payload)
+    .select("id")
+    .single()
+  if (error || !data) {
+    throw error ?? new Error("Failed to create product variation")
+  }
+  return data.id as string
+}
+
+export async function updateProductVariation(input: UpdateProductVariationInput): Promise<void> {
+  const updates: Record<string, unknown> = {}
+  if (typeof input.productId !== "undefined") {
+    updates.productId = input.productId
+    ;(updates as any).product_id = input.productId
+  }
+  if (typeof input.name !== "undefined") updates.name = input.name
+  if (typeof input.nameEn !== "undefined") updates.nameEn = input.nameEn
+  if (typeof input.price !== "undefined") updates.price = input.price
+  if (typeof input.imageUrl !== "undefined") updates.imageUrl = input.imageUrl
+  if (typeof input.isActive !== "undefined") updates.isActive = input.isActive ?? false
+  if (typeof (input as any).description !== "undefined") updates.description = (input as any).description ?? null
+  if (typeof (input as any).descriptionEn !== "undefined") updates.descriptionen = (input as any).descriptionEn ?? null
+  if (typeof (input as any).discount !== "undefined") updates.discount = (input as any).discount ?? null
+  const { error } = await supabase.from("product_variations").update(updates).eq("id", input.id)
+  if (error) throw error
+}
+
+export async function deleteProductVariation(id: string): Promise<void> {
+  const { error } = await supabase.from("product_variations").delete().eq("id", id)
   if (error) throw error
 }
 
