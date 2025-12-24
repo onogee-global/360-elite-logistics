@@ -18,10 +18,6 @@ import { Filter } from "lucide-react";
 import { useLocale } from "@/lib/locale-context";
 import type { Product, Category } from "@/lib/types";
 import { fetchCategories, fetchProductsWithVariations } from "@/lib/supabase";
-import {
-  products as mockProducts,
-  categories as mockCategories,
-} from "@/lib/mock-data";
 
 export default function ProductsPage() {
   const searchParams = useSearchParams();
@@ -55,10 +51,9 @@ export default function ProductsPage() {
           setAllProducts(prods);
         }
       } catch {
-        // Fallback to mock data if Supabase/env not ready
         if (!cancelled) {
-          setCategories(mockCategories as Category[]);
-          setAllProducts(mockProducts as Product[]);
+          setCategories([]);
+          setAllProducts([]);
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -165,29 +160,27 @@ export default function ProductsPage() {
             <CardContent className="p-4">
               <h3 className="font-semibold mb-4">{t("categories")}</h3>
               <div className="space-y-3">
-                {(categories.length > 0 ? categories : mockCategories).map(
-                  (category) => (
-                    <div
-                      key={category.id}
-                      className="flex items-center space-x-2"
+                {categories.map((category) => (
+                  <div
+                    key={category.id}
+                    className="flex items-center space-x-2"
+                  >
+                    <Checkbox
+                      id={category.slug}
+                      checked={selectedCategories.includes(category.slug)}
+                      onCheckedChange={() => toggleCategory(category.slug)}
+                    />
+                    <Label
+                      htmlFor={category.slug}
+                      className="text-sm cursor-pointer flex items-center gap-2"
                     >
-                      <Checkbox
-                        id={category.slug}
-                        checked={selectedCategories.includes(category.slug)}
-                        onCheckedChange={() => toggleCategory(category.slug)}
-                      />
-                      <Label
-                        htmlFor={category.slug}
-                        className="text-sm cursor-pointer flex items-center gap-2"
-                      >
-                        <span>{category.icon}</span>
-                        <span>
-                          {locale === "en" ? category.nameEn : category.name}
-                        </span>
-                      </Label>
-                    </div>
-                  )
-                )}
+                      <span>{category.icon}</span>
+                      <span>
+                        {locale === "en" ? category.nameEn : category.name}
+                      </span>
+                    </Label>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -256,9 +249,21 @@ export default function ProductsPage() {
             </Card>
           ) : filteredProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
+              {filteredProducts.map((product) => {
+                const cat = categories.find((c) => c.id === product.categoryId);
+                const catName = cat
+                  ? locale === "en"
+                    ? cat.nameEn
+                    : cat.name
+                  : undefined;
+                return (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    categoryName={catName}
+                  />
+                );
+              })}
             </div>
           ) : (
             <Card>

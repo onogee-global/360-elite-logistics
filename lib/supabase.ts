@@ -24,9 +24,9 @@ export async function fetchProductsWithVariations(): Promise<Product[]> {
       categoryId,
       subcategoryId,
       discount,
-      product_variations (
+      product_variations:product_variations!product_variations_product_id_fkey (
         id,
-        productId,
+        product_id,
         name,
         nameEn,
         price,
@@ -38,7 +38,6 @@ export async function fetchProductsWithVariations(): Promise<Product[]> {
       )
     `,
     )
-    .eq("isActive", true)
     .returns<any[]>()
 
   if (error || !data) {
@@ -77,9 +76,9 @@ export async function fetchProductById(id: string): Promise<Product | null> {
       categoryId,
       subcategoryId,
       discount,
-      product_variations (
+      product_variations:product_variations!product_variations_product_id_fkey (
         id,
-        productId,
+        product_id,
         name,
         nameEn,
         price,

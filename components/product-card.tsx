@@ -10,32 +10,42 @@ import type { Product } from "@/lib/types";
 import { useCartStore } from "@/lib/cart-store";
 import { useToast } from "@/hooks/use-toast";
 import { useLocale } from "@/lib/locale-context";
-import { categories } from "@/lib/mock-data";
 import type { ProductVariation } from "@/lib/types";
+import { useRouter } from "next/navigation";
 
 interface ProductCardProps {
   product: Product;
+  categoryName?: string;
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, categoryName }: ProductCardProps) {
   const addItem = useCartStore((state) => state.addItem);
   const { toast } = useToast();
   const { locale, t } = useLocale();
+  const router = useRouter();
 
   const handleAddToCart = () => {
-    const variation: ProductVariation = {
-      id: `${product.id}-default`,
-      productId: product.id,
-      name: product.unit ?? "Standard",
-      nameEn: product.unitEn ?? "Standard",
-      price: product.price ?? 0,
-      unit: product.unit ?? "",
-      unitEn: product.unitEn ?? "",
-      inStock: product.inStock ?? false,
-      imageUrl: product.image,
-      isActive: true,
-    };
-    addItem(product, variation);
+    const variations = product.variations ?? [];
+    if (variations.length > 1) {
+      router.push(`/products/${product.id}`);
+      return;
+    }
+    const chosen =
+      variations.length === 1
+        ? variations[0]
+        : ({
+            id: `${product.id}-default`,
+            productId: product.id,
+            name: product.unit ?? "Standard",
+            nameEn: product.unitEn ?? "Standard",
+            price: product.price ?? 0,
+            unit: product.unit ?? "",
+            unitEn: product.unitEn ?? "",
+            inStock: product.inStock ?? false,
+            imageUrl: product.image,
+            isActive: true,
+          } as ProductVariation);
+    addItem(product, chosen);
     toast({
       title: t("product.addedToCart"),
       description: `${locale === "sr" ? product.name : product.nameEn} ${t(
@@ -57,19 +67,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const productName = locale === "sr" ? product.name : product.nameEn;
   const productUnit = locale === "sr" ? product.unit : product.unitEn;
 
-  const category = categories.find((c) => c.id === product.categoryId);
-  const subcategory = category?.subcategories?.find(
-    (s) => s.id === product.subcategoryId
-  );
-  const categoryName = subcategory
-    ? locale === "sr"
-      ? subcategory.name
-      : subcategory.nameEn
-    : category
-    ? locale === "sr"
-      ? category.name
-      : category.nameEn
-    : "";
+  // categoryName is provided by callers that know the category list
 
   return (
     <Card className="group relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
