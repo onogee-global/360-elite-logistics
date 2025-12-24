@@ -29,6 +29,13 @@ import {
   fetchCategoriesAdmin,
   updateCategory,
 } from "@/lib/supabase";
+import { Spinner } from "@/components/ui/spinner";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationPrevious,
+  PaginationNext,
+} from "@/components/ui/pagination";
 
 interface CategoryFormValues {
   id?: string;
@@ -45,6 +52,8 @@ export default function AdminCategoriesPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CategoryFormValues | null>(null);
   const { toast } = useToast();
+  const [page, setPage] = useState(0);
+  const pageSize = 20;
 
   const filtered = useMemo(() => {
     const q = searchQuery.toLowerCase();
@@ -52,9 +61,27 @@ export default function AdminCategoriesPage() {
       (c) =>
         c.name.toLowerCase().includes(q) ||
         c.nameEn.toLowerCase().includes(q) ||
-        c.slug.toLowerCase().includes(q),
+        c.slug.toLowerCase().includes(q)
     );
   }, [categories, searchQuery]);
+
+  // Pagination derived values
+  useEffect(() => {
+    setPage(0);
+  }, [searchQuery, categories.length]);
+  const total = filtered.length;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const startIndex = Math.max(0, page * pageSize);
+  const endIndex = Math.min(startIndex + pageSize, total);
+  useEffect(() => {
+    if (startIndex >= total && total > 0) {
+      setPage(Math.max(0, Math.ceil(total / pageSize) - 1));
+    }
+  }, [total, startIndex, pageSize]);
+  const pageItems = useMemo(
+    () => filtered.slice(startIndex, endIndex),
+    [filtered, startIndex, endIndex]
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -132,7 +159,7 @@ export default function AdminCategoriesPage() {
           icon: editing.icon,
         });
         setCategories((prev) =>
-          prev.map((c) => (c.id === editing.id ? { ...c, ...editing } : c)),
+          prev.map((c) => (c.id === editing.id ? { ...c, ...editing } : c))
         );
         toast({ title: "Sačuvano", description: "Kategorija je izmenjena." });
       } else {
@@ -142,7 +169,10 @@ export default function AdminCategoriesPage() {
           slug: editing.slug,
           icon: editing.icon,
         });
-        setCategories((prev) => [{ id, ...editing, subcategories: [] }, ...prev]);
+        setCategories((prev) => [
+          { id, ...editing, subcategories: [] },
+          ...prev,
+        ]);
         toast({ title: "Kreirano", description: "Kategorija je kreirana." });
       }
       setOpen(false);
@@ -184,9 +214,20 @@ export default function AdminCategoriesPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <p className="text-xs md:text-sm text-muted-foreground">
-              {loading ? "Učitavanje..." : `Prikazano ${filtered.length} od ${categories.length} kategorija`}
-            </p>
+            {loading ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Spinner className="h-4 w-4" />
+                <span className="text-xs md:text-sm">Učitavanje…</span>
+              </div>
+            ) : (
+              <p className="text-xs md:text-sm text-muted-foreground">
+                {total === 0
+                  ? "Nema rezultata"
+                  : `Prika\u017eano ${
+                      startIndex + 1
+                    }\u2013${endIndex} od ${total} kategorija`}
+              </p>
+            )}
           </div>
 
           <div className="rounded-md border overflow-x-auto">
@@ -196,17 +237,21 @@ export default function AdminCategoriesPage() {
                   <TableHead className="min-w-[180px]">Naziv (SR)</TableHead>
                   <TableHead className="min-w-[180px]">Naziv (EN)</TableHead>
                   <TableHead>Slug</TableHead>
-                  <TableHead className="hidden sm:table-cell">Ikonica</TableHead>
+                  <TableHead className="hidden sm:table-cell">
+                    Ikonica
+                  </TableHead>
                   <TableHead className="text-right">Akcije</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((cat) => (
+                {pageItems.map((cat) => (
                   <TableRow key={cat.id}>
                     <TableCell className="font-medium">{cat.name}</TableCell>
                     <TableCell>{cat.nameEn}</TableCell>
                     <TableCell className="lowercase">{cat.slug}</TableCell>
-                    <TableCell className="hidden sm:table-cell">{cat.icon || "-"}</TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      {cat.icon || "-"}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         <Button
@@ -232,13 +277,46 @@ export default function AdminCategoriesPage() {
               </TableBody>
             </Table>
           </div>
+          {!loading && (
+            <div className="pt-4 flex justify-end">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setPage((p) => Math.max(0, p - 1));
+                    }}
+                  />
+                  <li className="px-2 text-sm text-muted-foreground self-center">
+                    Strana {page + 1} / {Math.max(1, pageCount)}
+                  </li>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setPage((p) => Math.min(pageCount - 1, p + 1));
+                    }}
+                  />
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
+      <Dialog
+        open={open}
+        onOpenChange={(o) => {
+          setOpen(o);
+          if (!o) setEditing(null);
+        }}
+      >
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editing?.id ? "Izmeni kategoriju" : "Nova kategorija"}</DialogTitle>
+            <DialogTitle>
+              {editing?.id ? "Izmeni kategoriju" : "Nova kategorija"}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4">
@@ -246,7 +324,12 @@ export default function AdminCategoriesPage() {
                 <div className="text-sm font-medium">Naziv (SR)</div>
                 <Input
                   value={editing?.name ?? ""}
-                  onChange={(e) => setEditing((prev) => ({ ...(prev as any), name: e.target.value }))}
+                  onChange={(e) =>
+                    setEditing((prev) => ({
+                      ...(prev as any),
+                      name: e.target.value,
+                    }))
+                  }
                   placeholder="npr. Pića i hrana"
                 />
               </div>
@@ -254,7 +337,12 @@ export default function AdminCategoriesPage() {
                 <div className="text-sm font-medium">Naziv (EN)</div>
                 <Input
                   value={editing?.nameEn ?? ""}
-                  onChange={(e) => setEditing((prev) => ({ ...(prev as any), nameEn: e.target.value }))}
+                  onChange={(e) =>
+                    setEditing((prev) => ({
+                      ...(prev as any),
+                      nameEn: e.target.value,
+                    }))
+                  }
                   placeholder="e.g. Drinks & Food"
                 />
               </div>
@@ -262,15 +350,27 @@ export default function AdminCategoriesPage() {
                 <div className="text-sm font-medium">Slug</div>
                 <Input
                   value={editing?.slug ?? ""}
-                  onChange={(e) => setEditing((prev) => ({ ...(prev as any), slug: e.target.value.toLowerCase() }))}
+                  onChange={(e) =>
+                    setEditing((prev) => ({
+                      ...(prev as any),
+                      slug: e.target.value.toLowerCase(),
+                    }))
+                  }
                   placeholder="pica-i-hrana"
                 />
               </div>
               <div className="space-y-2">
-                <div className="text-sm font-medium">Ikonica (emoji ili naziv)</div>
+                <div className="text-sm font-medium">
+                  Ikonica (emoji ili naziv)
+                </div>
                 <Input
                   value={editing?.icon ?? ""}
-                  onChange={(e) => setEditing((prev) => ({ ...(prev as any), icon: e.target.value }))}
+                  onChange={(e) =>
+                    setEditing((prev) => ({
+                      ...(prev as any),
+                      icon: e.target.value,
+                    }))
+                  }
                   placeholder="🍽️"
                 />
               </div>
@@ -280,12 +380,12 @@ export default function AdminCategoriesPage() {
             <DialogClose asChild>
               <Button variant="outline">Otkaži</Button>
             </DialogClose>
-            <Button onClick={onSubmit}>{editing?.id ? "Sačuvaj" : "Kreiraj"}</Button>
+            <Button onClick={onSubmit}>
+              {editing?.id ? "Sačuvaj" : "Kreiraj"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   );
 }
-
-

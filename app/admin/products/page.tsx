@@ -44,6 +44,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationPrevious,
+  PaginationNext,
+} from "@/components/ui/pagination";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function AdminProductsPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -54,6 +61,8 @@ export default function AdminProductsPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
   const [variations, setVariations] = useState<any[]>([]);
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
 
   useEffect(() => {
     let mounted = true;
@@ -95,6 +104,24 @@ export default function AdminProductsPage() {
       );
     });
   }, [items, categories, searchQuery]);
+
+  // Pagination derived values
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
+  const total = filteredProducts.length;
+  const pageCount = Math.max(1, Math.ceil(total / 20));
+  const startIndex = Math.max(0, (page - 1) * 20);
+  const endIndex = Math.min(startIndex + 20, total);
+  useEffect(() => {
+    if (startIndex >= total && total > 0) {
+      setPage(Math.max(1, Math.ceil(total / 20)));
+    }
+  }, [total, startIndex]);
+  const pageItems = useMemo(
+    () => filteredProducts.slice(startIndex, endIndex),
+    [filteredProducts, startIndex, endIndex]
+  );
 
   const startCreate = () => {
     setEditing({
@@ -296,11 +323,20 @@ export default function AdminProductsPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <p className="text-xs md:text-sm text-muted-foreground">
-              {loading
-                ? "Učitavanje..."
-                : `Prikazano ${filteredProducts.length} od ${items.length} proizvoda`}
-            </p>
+            {loading ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Spinner className="h-4 w-4" />
+                <span className="text-xs md:text-sm">Učitavanje…</span>
+              </div>
+            ) : (
+              <p className="text-xs md:text-sm text-muted-foreground">
+                {total === 0
+                  ? "Nema rezultata"
+                  : `Prikazano ${
+                      startIndex + 1
+                    }–${endIndex} od ${total} proizvoda`}
+              </p>
+            )}
           </div>
 
           <div className="rounded-md border overflow-x-auto">
@@ -317,7 +353,7 @@ export default function AdminProductsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredProducts.map((product) => {
+                {pageItems.map((product) => {
                   const category = categories.find(
                     (c) => c.id === product.categoryId
                   );
@@ -395,6 +431,33 @@ export default function AdminProductsPage() {
             </Table>
           </div>
         </CardContent>
+        {!loading && (
+          <div className="pb-4 px-4">
+            <div className="flex justify-end">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setPage((p) => Math.max(1, p - 1));
+                    }}
+                  />
+                  <li className="px-2 text-sm text-muted-foreground self-center">
+                    Strana {page} / {Math.max(1, pageCount)}
+                  </li>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setPage((p) => Math.min(pageCount, p + 1));
+                    }}
+                  />
+                </PaginationContent>
+              </Pagination>
+            </div>
+          </div>
+        )}
       </Card>
 
       <Dialog

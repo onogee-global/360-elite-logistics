@@ -1,4 +1,4 @@
-import type { Locale } from "./locale" // Assuming Locale is defined in another file
+import type { Locale } from "./types"
 
 export const locales: Locale[] = [
   { code: "sr", name: "Srpski" },
@@ -21,6 +21,9 @@ export const translations = {
     logout: "Odjava",
     account: "Nalog",
     admin: "Admin",
+    "admin.headerTitle": "Administracija",
+    "admin.headerSubtitle": "Upravljajte proizvodima i kategorijama",
+    "admin.back": "Nazad na sajt",
 
     // Hero section translations
     "hero.badge": "Brza dostava širom Srbije",
@@ -219,6 +222,9 @@ export const translations = {
     logout: "Logout",
     account: "Account",
     admin: "Admin",
+    "admin.headerTitle": "Admin Panel",
+    "admin.headerSubtitle": "Manage products and categories",
+    "admin.back": "Back to site",
 
     // Hero section translations
     "hero.badge": "Fast delivery across Serbia",
@@ -408,6 +414,10 @@ export const translations = {
 
 export type TranslationKey = keyof typeof translations.sr
 
+type LocaleKey = keyof typeof translations
+
 export function getTranslation(locale: Locale["code"], key: TranslationKey): string {
-  return translations[locale][key] || translations[defaultLocale][key]
+  const lang = (locale as unknown as LocaleKey) ?? (defaultLocale as unknown as LocaleKey)
+  const dict = (translations as Record<LocaleKey, typeof translations[keyof typeof translations]>)[lang]
+  return (dict?.[key] ?? translations[defaultLocale][key]) as string
 }
