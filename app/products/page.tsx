@@ -17,7 +17,7 @@ import {
 import { Filter } from "lucide-react";
 import { useLocale } from "@/lib/locale-context";
 import type { Product, Category } from "@/lib/types";
-import { fetchCategories, fetchProductsWithVariations } from "@/lib/supabase";
+import { fetchCategories, fetchProductsPublic } from "@/lib/supabase";
 
 export default function ProductsPage() {
   const searchParams = useSearchParams();
@@ -44,7 +44,7 @@ export default function ProductsPage() {
       try {
         const [cats, prods] = await Promise.all([
           fetchCategories(),
-          fetchProductsWithVariations(),
+          fetchProductsPublic(),
         ]);
         if (!cancelled) {
           setCategories(cats);

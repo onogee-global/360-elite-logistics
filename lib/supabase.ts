@@ -10,6 +10,33 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
 })
 
 // Helpers return app-level types for consistency with UI
+export async function fetchProductsPublic(): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from("products")
+    .select(
+      `
+      id,
+      name,
+      nameEn,
+      description,
+      descriptionEn,
+      image,
+      categoryId,
+      subcategoryId,
+      price,
+      discount
+    `,
+    )
+    .order("name", { ascending: true })
+    .returns<any[]>()
+
+  if (error || !data) {
+    throw error ?? new Error("Failed to fetch products")
+  }
+  // No variations embedded here on purpose (lighter payload for listing)
+  return data as Product[]
+}
+
 export async function fetchProductsWithVariations(): Promise<Product[]> {
   const { data, error } = await supabase
     .from("products")

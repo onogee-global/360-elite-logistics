@@ -26,25 +26,12 @@ export function ProductCard({ product, categoryName }: ProductCardProps) {
 
   const handleAddToCart = () => {
     const variations = product.variations ?? [];
-    if (variations.length > 1) {
+    const varCount = variations.length;
+    if (varCount !== 1) {
       router.push(`/products/${product.id}`);
       return;
     }
-    const chosen =
-      variations.length === 1
-        ? variations[0]
-        : ({
-            id: `${product.id}-default`,
-            productId: product.id,
-            name: product.unit ?? "Standard",
-            nameEn: product.unitEn ?? "Standard",
-            price: product.price ?? 0,
-            unit: product.unit ?? "",
-            unitEn: product.unitEn ?? "",
-            inStock: product.inStock ?? false,
-            imageUrl: product.image,
-            isActive: true,
-          } as ProductVariation);
+    const chosen = variations[0] as ProductVariation;
     addItem(product, chosen);
     toast({
       title: t("product.addedToCart"),
@@ -120,14 +107,32 @@ export function ProductCard({ product, categoryName }: ProductCardProps) {
       </CardContent>
 
       <CardFooter className="p-5 pt-0">
-        <Button
-          className="w-full h-11 text-base font-semibold shadow-md hover:shadow-lg transition-all"
-          onClick={handleAddToCart}
-          disabled={!product.inStock}
-        >
-          <ShoppingCart className="mr-2 h-5 w-5" />
-          {product.inStock ? t("addToCart") : t("outOfStock")}
-        </Button>
+        {(() => {
+          const variations = product.variations ?? [];
+          const varCount = variations.length;
+          if (varCount === 1) {
+            const inStock = !!variations[0].inStock;
+            return (
+              <Button
+                className="w-full h-11 text-base font-semibold shadow-md hover:shadow-lg transition-all"
+                onClick={handleAddToCart}
+                disabled={!inStock}
+              >
+                <ShoppingCart className="mr-2 h-5 w-5" />
+                {inStock ? t("addToCart") : t("outOfStock")}
+              </Button>
+            );
+          }
+          return (
+            <Button
+              variant="outline"
+              className="w-full h-11 text-base font-semibold"
+              onClick={() => router.push(`/products/${product.id}`)}
+            >
+              {t("viewDetails")}
+            </Button>
+          );
+        })()}
       </CardFooter>
     </Card>
   );
