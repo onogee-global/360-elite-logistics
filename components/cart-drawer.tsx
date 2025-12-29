@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -20,6 +21,10 @@ export function CartDrawer() {
   const { items, updateQuantity, removeItem, getTotal, getItemCount } =
     useCartStore();
   const { locale, t } = useLocale();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const itemCount = getItemCount();
   const total = getTotal();
 
@@ -33,7 +38,7 @@ export function CartDrawer() {
         >
           <ShoppingCart className="h-5 w-5" />
           <span className="hidden md:inline font-medium">{t("cart")}</span>
-          {itemCount > 0 && (
+          {mounted && itemCount > 0 && (
             <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg animate-in zoom-in">
               {itemCount}
             </span>

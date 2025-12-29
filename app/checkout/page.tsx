@@ -51,10 +51,24 @@ export default function CheckoutPage() {
           router.replace(`/login?redirect=${encodeURIComponent("/checkout")}`);
           return;
         }
-        // Prefill email if available
+        // Prefill fields we know about the user
+        const meta = (data.user.user_metadata as any) ?? {};
         setFormData((prev) => ({
           ...prev,
           email: data.user.email ?? prev.email,
+          name: (meta.full_name as string) ?? (meta.name as string) ?? prev.name,
+          phone: (meta.phone as string) ?? prev.phone,
+          address:
+            (meta.address as string) ??
+            (meta.street as string) ??
+            prev.address,
+          city: (meta.city as string) ?? prev.city,
+          zip:
+            (meta.zip as string) ??
+            (meta.postal_code as string) ??
+            (meta.postalCode as string) ??
+            prev.zip,
+          paymentMethod: "cash",
         }));
         setAuthChecked(true);
       }
@@ -256,51 +270,15 @@ export default function CheckoutPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <RadioGroup
-                  value={formData.paymentMethod}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      paymentMethod: value as "card" | "cash",
-                    }))
-                  }
-                >
-                  <div className="flex items-center space-x-3 border rounded-lg p-3 md:p-4 cursor-pointer hover:bg-muted/50">
-                    <RadioGroupItem value="card" id="card" />
-                    <Label
-                      htmlFor="card"
-                      className="flex items-center gap-2 md:gap-3 cursor-pointer flex-1"
-                    >
-                      <CreditCard className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
-                      <div>
-                        <div className="font-medium text-sm md:text-base">
-                          Platna kartica
-                        </div>
-                        <div className="text-xs md:text-sm text-muted-foreground">
-                          Plaćanje karticom pri dostavi
-                        </div>
-                      </div>
-                    </Label>
+                <div className="flex items-center space-x-3 border rounded-lg p-3 md:p-4">
+                  <Banknote className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
+                  <div>
+                    <div className="font-medium text-sm md:text-base">Gotovina</div>
+                    <div className="text-xs md:text-sm text-muted-foreground">
+                      Plaćanje gotovinom pri dostavi
+                    </div>
                   </div>
-
-                  <div className="flex items-center space-x-3 border rounded-lg p-3 md:p-4 cursor-pointer hover:bg-muted/50">
-                    <RadioGroupItem value="cash" id="cash" />
-                    <Label
-                      htmlFor="cash"
-                      className="flex items-center gap-2 md:gap-3 cursor-pointer flex-1"
-                    >
-                      <Banknote className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
-                      <div>
-                        <div className="font-medium text-sm md:text-base">
-                          Gotovina
-                        </div>
-                        <div className="text-xs md:text-sm text-muted-foreground">
-                          Plaćanje gotovinom pri dostavi
-                        </div>
-                      </div>
-                    </Label>
-                  </div>
-                </RadioGroup>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -364,6 +342,8 @@ export default function CheckoutPage() {
                 </div>
 
                 <Separator />
+
+                {/* Promo kod se primenjuje u korpi */}
 
                 {/* Price Breakdown */}
                 <div className="space-y-2">

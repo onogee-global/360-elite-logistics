@@ -18,16 +18,25 @@ import {
 import { useCartStore } from "@/lib/cart-store";
 import { useState } from "react";
 import { useLocale } from "@/lib/locale-context";
+import { supabase } from "@/lib/supabase";
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, getTotal, clearCart } =
     useCartStore();
   const { locale, t } = useLocale();
   const [promoCode, setPromoCode] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<{
+    code: string;
+    discount: number;
+  } | null>(null);
+  const [promoLoading, setPromoLoading] = useState(false);
 
   const subtotal = getTotal();
+  const promoDiscountAmount = appliedPromo
+    ? subtotal * (appliedPromo.discount / 100)
+    : 0;
   const deliveryFee = subtotal > 0 ? (subtotal >= 3000 ? 0 : 199) : 0;
-  const total = subtotal + deliveryFee;
+  const total = subtotal - promoDiscountAmount + deliveryFee;
 
   if (items.length === 0) {
     return (
@@ -248,16 +257,61 @@ export default function CartPage() {
                   <div className="flex gap-2">
                     <Input
                       placeholder={t("cart.promoCodePlaceholder")}
-                      value={promoCode}
+                      value={appliedPromo ? appliedPromo.code : promoCode}
                       onChange={(e) => setPromoCode(e.target.value)}
                       className="flex-1 h-11"
+                      disabled={promoLoading || !!appliedPromo}
                     />
-                    <Button
-                      variant="outline"
-                      className="h-11 px-6 bg-transparent"
-                    >
-                      {t("cart.applyPromo")}
-                    </Button>
+                    {appliedPromo ? (
+                      <Button
+                        variant="outline"
+                        className="h-11 px-6 bg-transparent"
+                        onClick={() => {
+                          setAppliedPromo(null);
+                          setPromoCode("");
+                        }}
+                      >
+                        {t("action.remove") ?? "Ukloni"}
+                      </Button>
+                    ) : (
+                      <Button
+                        className="h-11 px-6"
+                        disabled={promoLoading}
+                        onClick={async () => {
+                          const code = promoCode.trim();
+                          if (!code) return;
+                          try {
+                            setPromoLoading(true);
+                            const { data, error } = await supabase
+                              .from("promo_codes")
+                              .select("code, discount, active")
+                              .eq("active", true)
+                              .ilike("code", code)
+                              .limit(10);
+                            if (error) throw error;
+                            const match =
+                              (data ?? []).find(
+                                (r) =>
+                                  (r.code ?? "").toLowerCase() ===
+                                  code.toLowerCase()
+                              ) ?? null;
+                            if (!match) {
+                              return;
+                            }
+                            setAppliedPromo({
+                              code: match.code,
+                              discount: Number(match.discount),
+                            });
+                          } catch {
+                            // ignore
+                          } finally {
+                            setPromoLoading(false);
+                          }
+                        }}
+                      >
+                        {t("cart.applyPromo")}
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -273,6 +327,16 @@ export default function CartPage() {
                       {subtotal.toFixed(2)} RSD
                     </span>
                   </div>
+                  {appliedPromo && (
+                    <div className="flex justify-between text-base">
+                      <span className="text-muted-foreground">
+                        Promo ({appliedPromo.code})
+                      </span>
+                      <span className="font-semibold text-green-700">
+                        -{promoDiscountAmount.toFixed(2)} RSD
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-base">
                     <span className="text-muted-foreground">
                       {t("cart.deliveryFee")}
