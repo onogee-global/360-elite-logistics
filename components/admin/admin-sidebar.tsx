@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FolderTree, Package } from "lucide-react";
+import { FolderTree, Package, Percent } from "lucide-react";
 import { useLocale } from "@/lib/locale-context";
 
 export function AdminSidebar() {
@@ -23,9 +23,14 @@ export function AdminSidebar() {
           <Package className="h-5 w-5" />
           <span className="font-medium">{t("admin.products.title")}</span>
         </Link>
+        <Link
+          href="/admin/promo-codes"
+          className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-background transition-colors"
+        >
+          <Percent className="h-5 w-5" />
+          <span className="font-medium">Promo kodovi</span>
+        </Link>
       </nav>
     </aside>
   );
 }
-
-

@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js"
-import type { Category, Product, ProductVariation } from "./types"
+import type { Category, Product, ProductVariation, PromoCode } from "./types"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -529,6 +529,61 @@ export async function fetchOrdersForUser(userId: string): Promise<OrderSummary[]
     status: o.status,
     itemsCount: countByOrderId.get(o.id) ?? 0,
   }))
+}
+
+// ---- Promo codes (admin CRUD) ----
+export interface CreatePromoCodeInput {
+  code: string
+  discount: number
+  active?: boolean
+}
+
+export interface UpdatePromoCodeInput extends Partial<CreatePromoCodeInput> {
+  id: string
+}
+
+export async function fetchPromoCodesAdmin(): Promise<PromoCode[]> {
+  const { data, error } = await supabase
+    .from("promo_codes")
+    .select("id, code, discount, active, created_at")
+    .order("created_at", { ascending: false })
+    .returns<any[]>()
+  if (error || !data) throw error ?? new Error("Failed to fetch promo codes")
+  return data.map((r) => ({
+    id: r.id,
+    code: r.code,
+    discount: r.discount,
+    active: typeof r.active === "boolean" ? r.active : true,
+    createdAt: r.created_at,
+  })) as PromoCode[]
+}
+
+export async function createPromoCode(input: CreatePromoCodeInput): Promise<string> {
+  const { data, error } = await supabase
+    .from("promo_codes")
+    .insert({
+      code: input.code,
+      discount: input.discount,
+      active: typeof input.active === "boolean" ? input.active : true,
+    })
+    .select("id")
+    .single()
+  if (error || !data) throw error ?? new Error("Failed to create promo code")
+  return data.id as string
+}
+
+export async function updatePromoCode(input: UpdatePromoCodeInput): Promise<void> {
+  const updates: Record<string, unknown> = {}
+  if (typeof input.code !== "undefined") updates.code = input.code
+  if (typeof input.discount !== "undefined") updates.discount = input.discount
+  if (typeof input.active !== "undefined") updates.active = !!input.active
+  const { error } = await supabase.from("promo_codes").update(updates).eq("id", input.id)
+  if (error) throw error
+}
+
+export async function deletePromoCode(id: string): Promise<void> {
+  const { error } = await supabase.from("promo_codes").delete().eq("id", id)
+  if (error) throw error
 }
 
 

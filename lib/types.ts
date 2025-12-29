@@ -77,3 +77,11 @@ export interface Locale {
   code: "sr" | "en"
   name: string
 }
+
+export interface PromoCode {
+  id: string
+  code: string
+  discount: number
+  active?: boolean
+  createdAt?: string
+}
