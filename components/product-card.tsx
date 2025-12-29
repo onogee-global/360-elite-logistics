@@ -57,7 +57,7 @@ export function ProductCard({ product, categoryName }: ProductCardProps) {
   // categoryName is provided by callers that know the category list
 
   return (
-    <Card className="group relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
+    <Card className="group relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 h-full flex flex-col">
       {product.discount && (
         <Badge className="absolute top-3 right-3 z-10 bg-gradient-to-r from-destructive to-destructive/80 text-destructive-foreground shadow-lg px-3 py-1 text-sm font-bold">
           <Sparkles className="h-3 w-3 mr-1 inline" />-{product.discount}%
@@ -76,7 +76,7 @@ export function ProductCard({ product, categoryName }: ProductCardProps) {
         </div>
       </Link>
 
-      <CardContent className="p-5">
+      <CardContent className="p-5 flex-1 flex flex-col">
         {categoryName && (
           <Badge variant="secondary" className="mb-3 text-xs font-medium">
             {categoryName}
@@ -106,7 +106,7 @@ export function ProductCard({ product, categoryName }: ProductCardProps) {
         </div>
       </CardContent>
 
-      <CardFooter className="p-5 pt-0">
+      <CardFooter className="p-5 pt-0 mt-auto">
         {(() => {
           const variations = product.variations ?? [];
           const varCount = variations.length;
@@ -123,13 +123,14 @@ export function ProductCard({ product, categoryName }: ProductCardProps) {
               </Button>
             );
           }
+          // Multiple options: show Add to cart label, open product detail to select option
           return (
             <Button
-              variant="outline"
-              className="w-full h-11 text-base font-semibold"
+              className="w-full h-11 text-base font-semibold shadow-md hover:shadow-lg transition-all"
               onClick={() => router.push(`/products/${product.id}`)}
             >
-              {t("viewDetails")}
+              <ShoppingCart className="mr-2 h-5 w-5" />
+              {t("addToCart")}
             </Button>
           );
         })()}
