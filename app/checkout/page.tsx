@@ -36,6 +36,7 @@ export default function CheckoutPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+  const [orderPlaced, setOrderPlaced] = useState(false);
 
   const subtotal = getTotal();
   const deliveryFee = subtotal >= 3000 ? 0 : 199;
@@ -56,12 +57,11 @@ export default function CheckoutPage() {
         setFormData((prev) => ({
           ...prev,
           email: data.user.email ?? prev.email,
-          name: (meta.full_name as string) ?? (meta.name as string) ?? prev.name,
+          name:
+            (meta.full_name as string) ?? (meta.name as string) ?? prev.name,
           phone: (meta.phone as string) ?? prev.phone,
           address:
-            (meta.address as string) ??
-            (meta.street as string) ??
-            prev.address,
+            (meta.address as string) ?? (meta.street as string) ?? prev.address,
           city: (meta.city as string) ?? prev.city,
           zip:
             (meta.zip as string) ??
@@ -79,7 +79,7 @@ export default function CheckoutPage() {
     };
   }, [router]);
 
-  if (items.length === 0) {
+  if (items.length === 0 && !orderPlaced) {
     router.push("/cart");
     return null;
   }
@@ -148,6 +148,38 @@ export default function CheckoutPage() {
         },
         items: orderItems,
       });
+
+      // Mark as placed to prevent cart redirect guard
+      setOrderPlaced(true);
+
+      // Send order email via Resend (non-blocking)
+      try {
+        const emailRes = await fetch("/api/orders/email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderId,
+            customerEmail: formData.email,
+            customerPhone: formData.phone,
+            total,
+            items: orderItems.map((it) => ({
+              name: it.name,
+              variationName: it.variationName,
+              quantity: it.quantity,
+              unitPrice: it.unitPrice,
+            })),
+          }),
+        });
+        const emailJson = await emailRes.json().catch(() => ({}) as any);
+        if (!emailRes.ok || (emailJson && emailJson.ok === false)) {
+          console.warn(
+            "Order email send failed:",
+            emailJson?.error ?? emailRes.statusText
+          );
+        }
+      } catch {
+        // ignore email errors
+      }
 
       clearCart();
       toast({
@@ -273,7 +305,9 @@ export default function CheckoutPage() {
                 <div className="flex items-center space-x-3 border rounded-lg p-3 md:p-4">
                   <Banknote className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
                   <div>
-                    <div className="font-medium text-sm md:text-base">Gotovina</div>
+                    <div className="font-medium text-sm md:text-base">
+                      Gotovina
+                    </div>
                     <div className="text-xs md:text-sm text-muted-foreground">
                       Plaćanje gotovinom pri dostavi
                     </div>
