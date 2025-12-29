@@ -80,16 +80,29 @@ export function CartDrawer() {
             >
               <div className="space-y-3 py-6">
                 {items.map((item, index) => {
+                  const isBaseItem = item.variation.id.startsWith("base-");
                   const basePrice = item.variation.price;
-                  const finalPrice = item.product.discount
-                    ? basePrice * (1 - item.product.discount / 100)
-                    : basePrice;
+                  // Apply product-level discount only to base option lines
+                  const finalPrice =
+                    isBaseItem && item.product.discount
+                      ? basePrice * (1 - item.product.discount / 100)
+                      : basePrice;
                   const productName =
                     locale === "sr" ? item.product.name : item.product.nameEn;
                   const variationName =
-                    locale === "sr"
-                      ? item.variation.name
-                      : item.variation.nameEn;
+                    locale === "sr" ? item.variation.name : item.variation.nameEn;
+                  // Title is the option name:
+                  // - base option → product name
+                  // - variation option → variation name
+                  const title = isBaseItem ? productName : variationName;
+                  // Sublabel provides context:
+                  // - base option → "Glavni proizvod"/"Base product"
+                  // - variation option → product name
+                  const subLabel = isBaseItem
+                    ? locale === "sr"
+                      ? "Glavni proizvod"
+                      : "Base product"
+                    : productName;
                   const productUnit =
                     locale === "sr"
                       ? item.variation.unit
@@ -108,11 +121,11 @@ export function CartDrawer() {
                             item.product.image ||
                             "/placeholder.svg"
                           }
-                          alt={`${productName} ${variationName}`}
+                            alt={title}
                           fill
                           className="object-contain p-2"
                         />
-                        {item.product.discount && (
+                        {isBaseItem && item.product.discount && (
                           <div className="absolute top-1 right-1 bg-destructive text-destructive-foreground text-xs font-bold px-1.5 py-0.5 rounded">
                             -{item.product.discount}%
                           </div>
@@ -122,10 +135,10 @@ export function CartDrawer() {
                       <div className="flex-1 min-w-0 flex flex-col justify-between">
                         <div>
                           <h4 className="font-semibold text-sm line-clamp-2 mb-0.5">
-                            {productName}
+                            {title}
                           </h4>
                           <p className="text-xs text-muted-foreground">
-                            {variationName} • {productUnit}
+                            {subLabel} • {productUnit}
                           </p>
                         </div>
 
@@ -177,7 +190,7 @@ export function CartDrawer() {
                         <div className="font-bold text-base text-primary">
                           {(finalPrice * item.quantity).toFixed(2)} RSD
                         </div>
-                        {item.product.discount && (
+                        {isBaseItem && item.product.discount && (
                           <div className="text-xs text-muted-foreground line-through">
                             {(basePrice * item.quantity).toFixed(2)} RSD
                           </div>

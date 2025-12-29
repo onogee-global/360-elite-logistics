@@ -48,8 +48,14 @@ export const useCartStore = create<CartStore>()(
       clearCart: () => set({ items: [] }),
       getTotal: () => {
         return get().items.reduce((total, item) => {
-          const price = item.variation.price
-          return total + price * item.quantity
+          const isBaseItem = item.variation.id.startsWith("base-")
+          const basePrice = item.variation.price
+          // Apply product-level discount only to base option lines
+          const effectiveUnitPrice =
+            isBaseItem && typeof item.product.discount === "number"
+              ? basePrice * (1 - item.product.discount / 100)
+              : basePrice
+          return total + effectiveUnitPrice * item.quantity
         }, 0)
       },
       getItemCount: () => {

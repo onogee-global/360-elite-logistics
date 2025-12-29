@@ -29,17 +29,6 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
     () => variations,
     [variations]
   );
-  const primaryVariation: ProductVariation | undefined = useMemo(() => {
-    if (effectiveVariations.length === 0) return undefined;
-    return effectiveVariations.reduce(
-      (min, v) =>
-        typeof v.price === "number" &&
-        v.price < (min?.price ?? Number.MAX_SAFE_INTEGER)
-          ? v
-          : min,
-      effectiveVariations[0]
-    );
-  }, [effectiveVariations]);
   const selectedIsProductBase = selectedKey === "product";
   const selectedVariation: ProductVariation | undefined = useMemo(
     () =>
@@ -50,34 +39,57 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
   );
 
   useEffect(() => {
-    // Default to show the main product; user can switch to a variation
-    if (effectiveVariations.length > 0 && !selectedKey) {
-      setSelectedKey("product");
-    }
+    // Always default to base product on first load
+    if (!selectedKey) setSelectedKey("product");
   }, [effectiveVariations, selectedKey]);
 
+  // Selected option (base or variation) computed values
+  const selectedPrice = selectedIsProductBase
+    ? product.price ?? 0
+    : selectedVariation?.price ?? 0;
+  // Apply product-level discount only to the base option
+  const effectivePrice =
+    selectedIsProductBase && product.discount
+      ? selectedPrice * (1 - product.discount / 100)
+      : selectedPrice;
+  const selectedImage = selectedIsProductBase
+    ? product.image || "/placeholder.svg"
+    : selectedVariation?.imageUrl || product.image || "/placeholder.svg";
+  const selectedUnit = selectedIsProductBase
+    ? product.unit
+    : selectedVariation?.unit;
+  const selectedInStock = selectedIsProductBase
+    ? product.inStock ?? true
+    : !!selectedVariation?.inStock;
+
   const handleAddToCart = () => {
-    if (!selectedVariation) return; // Only variations are purchasable
+    // Create a pseudo-variation for base option to stay compatible with current cart store
+    const variationToAdd: ProductVariation | undefined = selectedIsProductBase
+      ? ({
+          id: `base-${product.id}`,
+          productId: product.id,
+          name: product.name,
+          nameEn: product.nameEn,
+          price: product.price ?? 0,
+          unit: product.unit ?? "",
+          unitEn: product.unitEn ?? "",
+          inStock: product.inStock ?? true,
+          imageUrl: product.image,
+          isActive: true,
+        } as ProductVariation)
+      : selectedVariation;
+    if (!variationToAdd || variationToAdd.price <= 0) return;
     for (let i = 0; i < quantity; i++) {
-      addItem(product, selectedVariation);
+      addItem(product, variationToAdd);
     }
     toast({
       title: "Dodato u korpu",
-      description: `${quantity}x ${product.name} (${selectedVariation.name}) je dodato u vašu korpu`,
+      description: `${quantity}x ${product.name}${
+        selectedIsProductBase ? "" : ` (${variationToAdd.name})`
+      } je dodato u vašu korpu`,
     });
     setQuantity(1);
   };
-
-  const basePrice = selectedIsProductBase
-    ? product.price ?? 0
-    : selectedVariation?.price ?? 0;
-  const finalPrice = product.discount
-    ? basePrice * (1 - product.discount / 100)
-    : basePrice;
-  const isInStock = !!selectedVariation?.inStock; // base product not directly purchasable
-  const displayImage = selectedIsProductBase
-    ? product.image || "/placeholder.svg"
-    : selectedVariation?.imageUrl || product.image || "/placeholder.svg";
 
   return (
     <div className="container mx-auto px-4 py-6 md:py-8">
@@ -119,13 +131,13 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
       {/* Product Image */}
       <div className="grid md:grid-cols-2 gap-6 md:gap-8">
         <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
-          {product.discount && selectedVariation && (
+          {selectedIsProductBase && product.discount && (
             <Badge className="absolute top-3 right-3 md:top-4 md:right-4 z-10 bg-destructive text-destructive-foreground text-base md:text-lg px-2 py-1 md:px-3">
               -{product.discount}%
             </Badge>
           )}
           <Image
-            src={displayImage}
+            src={selectedImage}
             alt={product.name}
             fill
             className="object-cover"
@@ -151,94 +163,84 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
           <Separator />
 
           {/* Main + Variation Selector */}
-          {effectiveVariations.length === 0 ? (
-            <div className="rounded-md border p-3 text-sm text-muted-foreground">
-              Trenutno nema dostupnih varijacija za kupovinu.
-            </div>
-          ) : (
-            <div>
-              <p className="text-sm font-medium mb-3">
-                Izaberite proizvod ili varijaciju
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {/* Base product option (shows product.price) */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedKey("product")}
-                  className={cn(
-                    "w-full rounded-md border px-3 py-2 text-left transition-colors",
-                    selectedIsProductBase
-                      ? "border-primary bg-primary/5"
-                      : "hover:bg-muted"
-                  )}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="relative h-10 w-10 rounded bg-muted overflow-hidden flex-shrink-0">
-                        <Image
-                          src={product.image || "/placeholder.svg"}
-                          alt={product.name}
-                          fill
-                          className="object-cover"
-                        />
+          <div>
+            <p className="text-sm font-medium mb-3">
+              Izaberite proizvod ili varijaciju
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {/* Base product option */}
+              <button
+                type="button"
+                onClick={() => setSelectedKey("product")}
+                className={cn(
+                  "w-full rounded-md border px-3 py-2 text-left transition-colors",
+                  selectedIsProductBase
+                    ? "border-primary bg-primary/5"
+                    : "hover:bg-muted"
+                )}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="relative h-10 w-10 rounded bg-muted overflow-hidden flex-shrink-0">
+                      <Image
+                        src={product.image || "/placeholder.svg"}
+                        alt={product.name}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <span className="font-medium truncate">{product.name}</span>
+                  </div>
+                  <span className="text-sm whitespace-nowrap">
+                    {(product.price ?? 0).toFixed(2)} RSD
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  Glavni proizvod
+                </div>
+              </button>
+              {effectiveVariations.map((v) => {
+                const selected = v.id === selectedKey;
+                return (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => setSelectedKey(v.id)}
+                    className={cn(
+                      "w-full rounded-md border px-3 py-2 text-left transition-colors",
+                      selected
+                        ? "border-primary bg-primary/5"
+                        : "hover:bg-muted"
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="relative h-10 w-10 rounded bg-muted overflow-hidden flex-shrink-0">
+                          <Image
+                            src={
+                              v.imageUrl || product.image || "/placeholder.svg"
+                            }
+                            alt={v.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <span className="font-medium truncate">{v.name}</span>
                       </div>
-                      <span className="font-medium truncate">
-                        {product.name}
+                      <span className="text-sm whitespace-nowrap">
+                        {v.price.toFixed(2)} RSD
                       </span>
                     </div>
-                    <span className="text-sm whitespace-nowrap">
-                      {(product.price ?? 0).toFixed(2)} RSD
-                    </span>
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    Glavni proizvod
-                  </div>
-                </button>
-                {effectiveVariations.map((v) => {
-                  const selected = v.id === selectedKey;
-                  return (
-                    <button
-                      key={v.id}
-                      type="button"
-                      onClick={() => setSelectedKey(v.id)}
-                      className={cn(
-                        "w-full rounded-md border px-3 py-2 text-left transition-colors",
-                        selected
-                          ? "border-primary bg-primary/5"
-                          : "hover:bg-muted"
-                      )}
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="relative h-10 w-10 rounded bg-muted overflow-hidden flex-shrink-0">
-                            <Image
-                              src={
-                                v.imageUrl ||
-                                product.image ||
-                                "/placeholder.svg"
-                              }
-                              alt={v.name}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                          <span className="font-medium truncate">{v.name}</span>
-                        </div>
-                        <span className="text-sm whitespace-nowrap">
-                          {v.price.toFixed(2)} RSD
-                        </span>
+                    {v.unit && (
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        Pakovanje: {v.unit}
                       </div>
-                      {v.unit && (
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          Pakovanje: {v.unit}
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+                    )}
+                  </button>
+                );
+              })}
             </div>
-          )}
+          </div>
 
           {/* Price */}
           <div>
@@ -246,32 +248,26 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
               Cena
             </p>
             <div className="flex items-baseline gap-2 md:gap-3">
-              {selectedVariation ? (
-                <>
-                  {product.discount ? (
-                    <>
-                      <span className="text-3xl md:text-4xl font-bold">
-                        {finalPrice.toFixed(2)} RSD
-                      </span>
-                      <span className="text-lg md:text-xl text-muted-foreground line-through">
-                        {basePrice.toFixed(2)} RSD
-                      </span>
-                    </>
-                  ) : (
+              <>
+                {product.discount ? (
+                  <>
                     <span className="text-3xl md:text-4xl font-bold">
-                      {basePrice.toFixed(2)} RSD
+                      {effectivePrice.toFixed(2)} RSD
                     </span>
-                  )}
-                </>
-              ) : (
-                <span className="text-3xl md:text-4xl font-bold text-muted-foreground">
-                  —
-                </span>
-              )}
+                    <span className="text-lg md:text-xl text-muted-foreground line-through">
+                      {selectedPrice.toFixed(2)} RSD
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-3xl md:text-4xl font-bold">
+                    {selectedPrice.toFixed(2)} RSD
+                  </span>
+                )}
+              </>
             </div>
-            {!!selectedVariation && (
+            {selectedUnit && (
               <p className="text-xs md:text-sm text-muted-foreground mt-1">
-                Pakovanje: {selectedVariation.unit}
+                Pakovanje: {selectedUnit}
               </p>
             )}
           </div>
@@ -301,9 +297,7 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
                 </Button>
               </div>
               <span className="text-sm text-muted-foreground">
-                Ukupno:{" "}
-                {selectedVariation ? (finalPrice * quantity).toFixed(2) : "—"}{" "}
-                RSD
+                Ukupno: {(effectivePrice * quantity).toFixed(2)} RSD
               </span>
             </div>
           </div>
@@ -313,14 +307,10 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
             size="lg"
             className="w-full"
             onClick={handleAddToCart}
-            disabled={!selectedVariation || !isInStock}
+            disabled={!selectedInStock || selectedPrice <= 0}
           >
             <ShoppingCart className="mr-2 h-5 w-5" />
-            {selectedVariation
-              ? isInStock
-                ? "Dodaj u korpu"
-                : "Nema na stanju"
-              : "Izaberite varijantu"}
+            {selectedInStock ? "Dodaj u korpu" : "Nema na stanju"}
           </Button>
 
           {/* Product Details */}
@@ -336,14 +326,12 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Pakovanje:</dt>
-                  <dd className="font-medium">
-                    {selectedVariation?.unit ?? "-"}
-                  </dd>
+                  <dd className="font-medium">{selectedUnit ?? "-"}</dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Dostupnost:</dt>
                   <dd className="font-medium">
-                    {isInStock ? "Na stanju" : "Nema na stanju"}
+                    {selectedInStock ? "Na stanju" : "Nema na stanju"}
                   </dd>
                 </div>
               </dl>

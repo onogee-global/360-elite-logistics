@@ -102,16 +102,26 @@ export default function CartPage() {
 
                 <div className="space-y-6">
                   {items.map((item) => {
+                    const isBaseItem = item.variation.id.startsWith("base-");
                     const basePrice = item.variation.price;
-                    const finalPrice = item.product.discount
-                      ? basePrice * (1 - item.product.discount / 100)
-                      : basePrice;
+                    // Apply product-level discount only to base option lines
+                    const finalPrice =
+                      isBaseItem && item.product.discount
+                        ? basePrice * (1 - item.product.discount / 100)
+                        : basePrice;
                     const productName =
                       locale === "sr" ? item.product.name : item.product.nameEn;
                     const variationName =
                       locale === "sr"
                         ? item.variation.name
                         : item.variation.nameEn;
+                    // Title is the option name; sublabel provides context
+                    const title = isBaseItem ? productName : variationName;
+                    const subLabel = isBaseItem
+                      ? locale === "sr"
+                        ? "Glavni proizvod"
+                        : "Base product"
+                      : productName;
                     const productUnit =
                       locale === "sr"
                         ? item.variation.unit
@@ -131,7 +141,7 @@ export default function CartPage() {
                                 item.product.image ||
                                 "/placeholder.svg"
                               }
-                              alt={`${productName} ${variationName}`}
+                              alt={title}
                               fill
                               className="object-contain p-3"
                             />
@@ -144,11 +154,11 @@ export default function CartPage() {
                               className="hover:text-primary transition-colors"
                             >
                               <h3 className="font-bold text-lg line-clamp-2 mb-1">
-                                {productName}
+                                {title}
                               </h3>
                             </Link>
                             <p className="text-sm text-muted-foreground mb-4">
-                              {variationName} • {productUnit}
+                              {subLabel} • {productUnit}
                             </p>
 
                             <div className="flex items-center gap-4">
@@ -203,7 +213,7 @@ export default function CartPage() {
                             <div className="font-bold text-xl mb-1">
                               {(finalPrice * item.quantity).toFixed(2)} RSD
                             </div>
-                            {item.product.discount && (
+                            {isBaseItem && item.product.discount && (
                               <div className="text-sm text-muted-foreground line-through mb-2">
                                 {(basePrice * item.quantity).toFixed(2)} RSD
                               </div>

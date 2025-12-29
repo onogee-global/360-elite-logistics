@@ -1,191 +1,133 @@
-# 360 Logistics – E-commerce Web Application
+# 360 Logistic – E-commerce Web Application
 
 ## Project Overview
 
-This project is a modern e-commerce web application for product ordering **without online payment**.
+Modern e-commerce web application for ordering products **without online payment**.
 
-The system allows users to browse products, add them to a cart, and submit orders.  
-Orders are saved to the database and automatically sent via email.
+Users browse products, select an option (base product or variation), add to cart, and submit orders.  
+Orders are saved in Supabase and sent via email.
 
-The application is bilingual (Serbian / English) and SEO optimized.
-
-✅ **Admin panel IS included in scope.**  
-Products, categories and variations are managed via the admin area.
+The application is bilingual (SR/EN), SEO optimized, and includes an **admin panel**.
 
 ---
 
 ## Tech Stack
 
-- **Frontend**: Next.js 14 (App Router)
-- **Language**: TypeScript
-- **Styling**: styled-components
-- **Backend / DB / Auth**: Supabase
-- **Hosting**: Vercel + Supabase
-- **Emails**: SMTP / transactional email service
+- Next.js 14 (App Router)
+- TypeScript
+- styled-components
+- Supabase (DB + Auth)
+- Vercel hosting
+- SMTP / transactional email
 
 ---
 
-## Core Features
+## Core Concept (IMPORTANT)
 
-### Product Catalog
+### One product = selectable options
 
-- Products displayed by **categories and subcategories**
-- Around **350 products**
-- Each product represents a **single base item** (e.g. Chips)
-- Product fields:
-  - Name (SR / EN)
-  - Default image (optional fallback only)
-  - Active / inactive status
+On product detail page, the user always selects from **options**:
 
-### Product Variations (Types) – Price & Image per Variation
-
-Each product can have **multiple variations (types)**.
-
-Variations represent the **same product** with different attributes, such as:
-
-- Flavor
-- Size
-- Type
-
-Example:
-
-- Product: Chips
-  - Type: Paprika
-  - Type: Cheese
-  - Type: Sour Cream
+- **Base option** (the main product itself) — always shown
+- **Variation options** — shown only if variations exist
 
 Rules:
 
-- Variations belong to **one product**
-- Variations are **not separate products**
-- Cart and orders operate on **variation level** (`variation_id`)
-
-✅ **Important rule (source of truth):**
-
-- **Each variation has its own `price` and its own `image_url`.**
-- UI shows the selected variation’s price and image.
-
-Each variation contains:
-
-- Name (SR / EN)
-- Price (required)
-- Image (required)
-- Active / inactive status
+- If product has **no variations** → show only the base option (auto-selected).
+- If product has **variations** → show base option + variations, with base option selected by default.
+- Base option and variations are treated the same in the UI (select one option to add to cart).
 
 ---
 
-### Product Listing Behavior
+## Pricing & Images (Source of Truth)
 
-- Products are listed **once** in the shop (no duplication for variations)
-- Variations are selectable **on product details page**
-- If a product has only one active variation:
-  - Variation is auto-selected
-  - No selection UI is required
+Each selectable option has its own price and image:
 
-Image & price behavior:
+- Base option uses `products.price` and `products.image_url`
+- Variation option uses `product_variations.price` and `product_variations.image_url`
 
-- Product details show:
-  - `selectedVariation.image_url` (fallback to product image only if needed)
-  - `selectedVariation.price`
+UI always displays:
+
+- `selectedOption.price`
+- `selectedOption.image_url`
 
 ---
 
-### Cart
+## Product Detail Selection UI
 
-- Cart items are based on **product variations**
-- User must select a variation before adding to cart
-- Cart functionality:
-  - Add items
-  - Update quantity
-  - Remove items
-- Cart displays:
-  - Product name
-  - Selected variation (type)
-  - Image (variation image)
-  - Unit price (variation price)
-  - Quantity
-  - Subtotal
+Options list example:
 
----
+- ✅ Base product option (default selected)
+- Variation: Paprika
+- Variation: Cheese
+- Variation: Sour Cream
 
-### Checkout (Authenticated Only)
+Behavior:
 
-- Only logged-in users can place orders
-- Required fields:
-  - Phone number
-  - Optional note
-- Checkout flow:
-  1. Validate cart
-  2. Save order and items to database (variation-level)
-  3. Send order via email
-  4. Show confirmation message
+- Default selected option is the base product option.
+- User can switch selection to a variation.
+- Add to cart uses the currently selected option.
 
 ---
 
-### Authentication
+## Cart Rules
 
-- User registration
-- Login
-- Logout
-- Implemented using **Supabase Auth**
+Cart items are based on a unified “option” model:
 
----
+Each cart item contains:
 
-## Admin Panel
+- `product_id` (always)
+- `variation_id` (nullable: null = base option)
+- localized option name
+- unit price snapshot
+- option image
+- qty
 
-Admin panel is included to manage catalog and orders.
+Cart groups items by:
 
-### Admin Features
-
-- Categories CRUD (supports parent/child categories)
-- Products CRUD (base product entity)
-- Product Variations CRUD:
-  - create/update variation name (SR/EN)
-  - **set variation price (required)**
-  - **set variation image (required)**
-  - activate/deactivate variation
-- Orders:
-  - list orders
-  - order details view
-  - optional status update (if needed)
-
-### Admin Access Control
-
-- Admin routes must be protected
-- Only authorized admin users can access admin pages
-- Non-admin users must not be able to write to catalog tables
+- `variation_id` if present
+- otherwise by `product_id` for base option
 
 ---
 
-## Static Pages
+## Checkout
 
-- Home
-- About Us
-- Contact
-- Delivery Information
-
-All pages support **Serbian and English** languages.
-
----
-
-## Internationalization (i18n)
-
-- Default language: Serbian
-- Secondary language: English
-- SEO-friendly structure
-- `hreflang` tags implemented
+- Only authenticated users can checkout (Supabase Auth)
+- Required fields: phone, optional note
+- Creates:
+  - `orders`
+  - `order_items` per cart line:
+    - base option → `variation_id = null`
+    - variation option → `variation_id = <id>`
+- Sends order confirmation email
 
 ---
 
-## SEO Features
+## Admin Panel (IN SCOPE)
 
-- Meta tags (title, description)
-- Open Graph tags
-- `sitemap.xml`
-- `robots.txt`
-- `schema.org/Product` structured data
-- Clean URLs
-- SEO-optimized static content
+Admin panel manages catalog and orders.
+
+### Categories
+
+- CRUD
+- parent/child categories
+
+### Products
+
+- CRUD
+- Must include price + image (for base option)
+- activate/deactivate
+
+### Variations (optional)
+
+- CRUD per product
+- Each variation must include price + image
+- activate/deactivate
+
+### Orders
+
+- orders list + details
+- optional status updates
 
 ---
 
@@ -193,119 +135,73 @@ All pages support **Serbian and English** languages.
 
 ### categories
 
-- `id`
-- `name_sr`
-- `name_en`
-- `parent_id`
+- id, name_sr, name_en, parent_id
 
 ### products
 
-- `id`
-- `category_id`
-- `name_sr`
-- `name_en`
-- `image_url` (optional fallback)
-- `active`
+- id
+- category_id
+- name_sr
+- name_en
+- price
+- image_url
+- active
 
 ### product_variations
 
-- `id`
-- `product_id`
-- `name_sr`
-- `name_en`
-- `price` (required)
-- `image_url` (required)
-- `active`
+- id
+- product_id
+- name_sr
+- name_en
+- price
+- image_url
+- active
 
 ### orders
 
-- `id`
-- `user_id`
-- `phone`
-- `note`
-- `total`
-- `status`
-- `created_at`
+- id, user_id, phone, note, total, status, created_at
 
 ### order_items
 
-- `id`
-- `order_id`
-- `product_id`
-- `variation_id`
-- `qty`
-- `price` (unit price snapshot)
+- id
+- order_id
+- product_id
+- variation_id (nullable)
+- qty
+- price (unit price snapshot)
 
-### users
+### user_profiles (optional)
 
-- Supabase Auth
-- Optional additional table:
-  - user_profiles (full_name, phone, admin flag/role if used)
+- user_id, full_name, phone, is_admin
 
 ---
 
-## Email Order System
+## i18n & SEO
 
-- On successful checkout:
-  - Order is saved in Supabase
-  - Order details are sent via email
-- Email includes:
-  - Customer info
-  - Products
-  - Selected variations (types)
-  - Quantities
-  - Prices
-  - Total amount
-  - User note
+- SR/EN translations
+- hreflang tags
+- meta tags + OG
+- sitemap.xml + robots.txt
+- schema.org/Product
 
 ---
 
 ## Out of Scope ❌
 
 - Online payments
-- Analytics dashboard
-- Multi-warehouse logistics logic (if not specified)
-- Anything not listed under Core Features / Admin Panel
-
----
-
-## Development Notes for Cursor
-
-- Supabase is the **single source of truth**
-- Catalog writes happen only via **Admin Panel** (authorized admins)
-- Public shop is read-only for catalog data
-- Cart and orders operate strictly on **variation level**
-- Clean, reusable component structure
-- All secrets stored in environment variables
-
----
-
-## Delivery Timeline
-
-Estimated duration: **20 working days** (adjust if admin scope expands)
-
-Phases:
-
-1. Project setup & database
-2. Shop, cart & product details
-3. Variation selection logic
-4. Checkout & email system
-5. Admin panel (catalog + orders)
-6. Static pages, translations, SEO, testing & deployment
+- Subscription plans
+- Advanced analytics dashboards
 
 ---
 
 ## Deployment
 
-- Frontend: **Vercel**
-- Database & Auth: **Supabase**
-- Email service: SMTP provider
+- Vercel (frontend)
+- Supabase (DB/Auth)
+- SMTP provider for emails
 
 ---
 
-## Notes
+## Final Note
 
-This document represents the **final agreed project scope**.
-
-Any feature not explicitly listed (payments, dashboards, extra modules)  
-is considered **out of scope** and requires a separate agreement.
+This document is the single source of truth for scope and behavior.

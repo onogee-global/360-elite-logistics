@@ -102,6 +102,7 @@ export async function fetchProductById(id: string): Promise<Product | null> {
       image,
       categoryId,
       subcategoryId,
+      price,
       discount,
       product_variations:product_variations!product_variations_product_id_fkey (
         id,
@@ -136,6 +137,7 @@ export async function fetchProductById(id: string): Promise<Product | null> {
     image: data.image,
     categoryId: data.categoryId,
     subcategoryId: data.subcategoryId,
+    price: typeof data.price === "number" ? data.price : undefined,
     discount: data.discount ?? undefined,
     variations,
   }

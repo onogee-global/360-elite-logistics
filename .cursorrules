@@ -1,61 +1,166 @@
-You are coding an e-commerce web app for 360 Logistics using Next.js 14 (App Router), TypeScript, styled-components, and Supabase.
+You are building an e-commerce web application for 360 Logistic using Next.js 14 (App Router), TypeScript, styled-components, and Supabase.
 
-UPDATED SCOPE:
+=====================
+CORE CONCEPT
+=====================
 
-- Admin panel IS included.
-- Variations are mandatory for purchasing (cart & orders operate on variation_id).
+- A PRODUCT is a container.
+- A PRODUCT always has at least ONE purchasable option.
+- That option can be:
 
-HARD RULES:
+  - the BASE PRODUCT itself, or
+  - a VARIATION of the product.
 
-- Products are base entities. Variations (types/flavors/sizes) belong to a product and are not separate products.
-- Cart and orders must operate on VARIATION LEVEL (variation_id), not product level.
-- Checkout is allowed only for authenticated users (Supabase Auth).
-- Orders must be saved to Supabase and emailed (no online payment).
-- Do not implement any payment provider.
+- Variations are OPTIONAL.
+- If no variations exist → the base product itself is the purchasable option.
+- If variations exist → base product + variations are shown as selectable options.
 
-DATA RULES (Supabase):
+The system always works with OPTIONS, not products.
 
-- Use tables: categories, products, product_variations, orders, order_items, (optional user_profiles).
-- Product detail page must fetch product + ACTIVE variations.
-- If product has only 1 active variation: auto-select and hide variation chooser.
-- If product has >1 active variations: require user selection before add-to-cart.
+=====================
+PURCHASING RULES
+=====================
 
-VARIATION TRUTH RULES (IMPORTANT):
+- Cart and orders operate on OPTION LEVEL.
+- An option can be:
 
-- Every variation has its own price and its own image.
-- Use variation.price as the displayed and charged price.
-- Use variation.image_url as the displayed image.
-- Product image (products.image_url) may exist only as optional fallback:
-  - displayImage = variation.image_url ?? product.image_url
-  - but the expectation is that variation.image_url is present for all purchasable variations.
+  - Base product (variation_id = null)
+  - Product variation (variation_id = UUID)
 
-UI RULES:
+- Every option MUST have:
+  - price
+  - image
 
-- Product listing shows product once (no duplication for variations).
-- Product details show:
-  - image: selectedVariation.image_url (fallback to product.image_url only if needed)
-  - price: selectedVariation.price
-- Cart item uses:
-  - variationId, variationName, variation.price
-  - image: selectedVariation.image_url (fallback only if needed)
+Source of truth:
 
-ADMIN PANEL RULES:
+- Base option:
+  - price → products.price
+  - image → products.image_url
+- Variation option:
+  - price → product_variations.price
+  - image → product_variations.image_url
 
-- Provide an admin area to manage catalog and orders:
-  - Categories CRUD (incl. parent_id for subcategories)
-  - Products CRUD (base product data)
-  - Product Variations CRUD (price + image per variation; activate/deactivate)
-  - Orders list + order details (read-only or status updates depending on requirements)
-- Admin must be protected:
-  - Only authorized users can access admin routes (use Supabase auth + role/claim or allowlist).
-- Admin features must not leak to public routes.
+Displayed price & image must always come from the selected option.
 
-ENGINEERING RULES:
+=====================
+PRODUCT PAGE LOGIC
+=====================
 
-- Prefer clean components and predictable folder structure.
-- Use environment variables for Supabase keys and email settings.
-- Keep UI minimal and white-based; no Tailwind.
-- Implement SR/EN translations and hreflang; SEO basics: meta, sitemap, robots, schema.org/Product.
-- Provide code that is production-ready, typed, and easy to maintain.
+- Fetch product + active variations.
+- Build options array:
+  - First option = base product
+  - Other options = variations
 
-When uncertain, follow the README/spec and document assumptions in code comments.
+Rules:
+
+- If only base option exists → auto-selected
+- If variations exist → base option is default, others selectable
+- User must select exactly one option before adding to cart
+
+=====================
+CART RULES
+=====================
+
+Cart items are based on OPTIONS.
+
+Each cart item contains:
+
+- product_id
+- variation_id (nullable)
+- option_name
+- price (snapshot)
+- image
+- quantity
+
+Grouping rule:
+
+- Items are grouped by:
+  - variation_id if present
+  - otherwise product_id
+
+=====================
+CHECKOUT RULES
+=====================
+
+- Checkout allowed only for authenticated users.
+- Create:
+  - order
+  - order_items (one per cart item)
+- order_items:
+
+  - product_id always present
+  - variation_id nullable
+  - price is snapshot at time of order
+
+- Send order confirmation email after successful creation.
+
+=====================
+ADMIN PANEL (IN SCOPE)
+=====================
+
+Admin users can:
+
+- Manage categories (CRUD)
+- Manage products (CRUD)
+- Manage product variations (CRUD)
+- Manage orders (read + optional status update)
+
+Rules:
+
+- Admin routes must be protected.
+- Non-admin users must not access admin routes.
+
+=====================
+DATABASE RULES
+=====================
+
+Tables used:
+
+- categories
+- products
+- product_variations
+- orders
+- order_items
+- user_profiles (optional)
+
+Key rules:
+
+- products are not purchasable directly unless used as base option
+- product_variations override price & image
+- variation_id is nullable in order_items
+
+=====================
+UI RULES
+=====================
+
+- Product listing shows each product once.
+- Product page shows:
+  - selected option image
+  - selected option price
+- No duplicated products for variations.
+- UI must be minimal and clean (no Tailwind).
+
+=====================
+ENGINEERING RULES
+=====================
+
+- Use TypeScript everywhere.
+- Keep components small and predictable.
+- Use environment variables for secrets.
+- Implement SR / EN i18n with SEO support.
+- Implement sitemap, robots.txt, and schema.org Product.
+
+=====================
+OUT OF SCOPE
+=====================
+
+- Online payments
+- Subscriptions
+- Advanced analytics
+
+=====================
+FINAL NOTE
+=====================
+
+This file is the single source of truth.
+If something is unclear, follow this file over assumptions.
