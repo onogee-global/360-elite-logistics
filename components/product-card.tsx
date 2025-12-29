@@ -26,13 +26,25 @@ export function ProductCard({ product, categoryName }: ProductCardProps) {
 
   const handleAddToCart = () => {
     const variations = product.variations ?? [];
-    const varCount = variations.length;
-    if (varCount !== 1) {
-      router.push(`/products/${product.id}`);
-      return;
+    let variationToAdd: ProductVariation;
+    if (variations.length === 1) {
+      variationToAdd = variations[0] as ProductVariation;
+    } else {
+      // Add base product as pseudo-variation to match cart store expectations
+      variationToAdd = {
+        id: `base-${product.id}`,
+        productId: product.id,
+        name: locale === "sr" ? product.name : product.nameEn,
+        nameEn: product.nameEn,
+        price: product.price ?? 0,
+        unit: product.unit ?? "",
+        unitEn: product.unitEn ?? "",
+        inStock: product.inStock ?? true,
+        imageUrl: product.image,
+        isActive: true,
+      } as ProductVariation;
     }
-    const chosen = variations[0] as ProductVariation;
-    addItem(product, chosen);
+    addItem(product, variationToAdd);
     toast({
       title: t("product.addedToCart"),
       description: `${locale === "sr" ? product.name : product.nameEn} ${t(
@@ -109,28 +121,18 @@ export function ProductCard({ product, categoryName }: ProductCardProps) {
       <CardFooter className="p-5 pt-0 mt-auto">
         {(() => {
           const variations = product.variations ?? [];
-          const varCount = variations.length;
-          if (varCount === 1) {
-            const inStock = !!variations[0].inStock;
-            return (
-              <Button
-                className="w-full h-11 text-base font-semibold shadow-md hover:shadow-lg transition-all"
-                onClick={handleAddToCart}
-                disabled={!inStock}
-              >
-                <ShoppingCart className="mr-2 h-5 w-5" />
-                {inStock ? t("addToCart") : t("outOfStock")}
-              </Button>
-            );
-          }
-          // Multiple options: show Add to cart label, open product detail to select option
+          const canAdd =
+            variations.length === 1
+              ? !!variations[0].inStock
+              : product.inStock ?? true;
           return (
             <Button
               className="w-full h-11 text-base font-semibold shadow-md hover:shadow-lg transition-all"
-              onClick={() => router.push(`/products/${product.id}`)}
+              onClick={handleAddToCart}
+              disabled={!canAdd || (variations.length !== 1 && !(product.price ?? 0))}
             >
               <ShoppingCart className="mr-2 h-5 w-5" />
-              {t("addToCart")}
+              {canAdd ? t("addToCart") : t("outOfStock")}
             </Button>
           );
         })()}
