@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocale } from "@/lib/locale-context";
 import type { ProductVariation } from "@/lib/types";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 
 interface ProductCardProps {
   product: Product;
@@ -114,6 +115,12 @@ export function ProductCard({ product, categoryName, promoVariationId }: Product
   // categoryName is provided by callers that know the category list
 
   return (
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+    >
     <Card className="group relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 h-full flex flex-col">
       {typeof promoPct === "number" && promoPct > 0 && (
         <Badge className="absolute top-3 right-3 z-10 bg-gradient-to-r from-destructive to-destructive/80 text-destructive-foreground shadow-lg px-3 py-1 text-sm font-bold">
@@ -171,17 +178,20 @@ export function ProductCard({ product, categoryName, promoVariationId }: Product
               ? !!variations[0].inStock
               : product.inStock ?? true;
           return (
-            <Button
-              className="w-full h-11 text-base font-semibold shadow-md hover:shadow-lg transition-all"
-              onClick={handleAddToCart}
-              disabled={!canAdd || (variations.length !== 1 && !(product.price ?? 0))}
-            >
-              <ShoppingCart className="mr-2 h-5 w-5" />
-              {canAdd ? t("addToCart") : t("outOfStock")}
-            </Button>
+            <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                className="w-full h-11 text-base font-semibold shadow-md hover:shadow-lg transition-all"
+                onClick={handleAddToCart}
+                disabled={!canAdd || (variations.length !== 1 && !(product.price ?? 0))}
+              >
+                <ShoppingCart className="mr-2 h-5 w-5" />
+                {canAdd ? t("addToCart") : t("outOfStock")}
+              </Button>
+            </motion.div>
           );
         })()}
       </CardFooter>
     </Card>
+    </motion.div>
   );
 }

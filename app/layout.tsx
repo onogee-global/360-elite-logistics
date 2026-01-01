@@ -6,6 +6,7 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Toaster } from "@/components/ui/toaster"
 import { LocaleProvider } from "@/lib/locale-context"
+import PageTransition from "@/components/page-transition"
 import "./globals.css"
 
 const _geist = Geist({ subsets: ["latin"] })
@@ -60,7 +61,9 @@ export default function RootLayout({
       <body className={`font-sans antialiased flex flex-col min-h-screen`}>
         <LocaleProvider>
           <Header />
-          <main className="flex-1">{children}</main>
+          <main className="flex-1">
+            <PageTransition>{children}</PageTransition>
+          </main>
           <Footer />
           <Toaster />
         </LocaleProvider>

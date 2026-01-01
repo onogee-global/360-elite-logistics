@@ -24,6 +24,7 @@ import { useLocale } from "@/lib/locale-context";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/lib/supabase";
+import { motion } from "framer-motion";
 
 export function Header() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -85,10 +86,23 @@ export function Header() {
     { href: "/contact", label: t("contact"), icon: Mail },
   ];
 
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 6);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background">
+    <header className={`sticky top-0 z-50 w-full border-b ${scrolled ? "backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-sm" : "bg-background"}`}>
       <div className="bg-gradient-to-r from-primary via-accent to-primary text-primary-foreground">
-        <div className="container mx-auto px-4 py-2">
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          className="container mx-auto px-4 py-2"
+        >
           <div className="flex items-center justify-between md:justify-between gap-4 text-xs md:text-sm overflow-x-auto scrollbar-hide">
             <p className="whitespace-nowrap">
               {locale === "sr"
@@ -106,7 +120,7 @@ export function Header() {
                 : "We bring heavy items to your door"}
             </p>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       <div className="container mx-auto px-4 py-3 md:py-4">
@@ -233,15 +247,17 @@ export function Header() {
           </Sheet>
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <Image
-              src="/brand/360-logistics-logo-pro.svg"
-              alt="360 Logistic"
-              width={200}
-              height={48}
-              priority
-            />
-          </Link>
+          <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: "easeOut" }}>
+            <Link href="/" className="flex items-center gap-2">
+              <Image
+                src="/brand/360-logistics-logo-pro.svg"
+                alt="360 Logistic"
+                width={200}
+                height={48}
+                priority
+              />
+            </Link>
+          </motion.div>
 
           <form
             onSubmit={handleSearch}
@@ -309,7 +325,9 @@ export function Header() {
                 {locale === "sr" ? "Odjava" : "Logout"}
               </Button>
             )}
-            <CartDrawer />
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
+              <CartDrawer />
+            </motion.div>
           </div>
         </div>
 
