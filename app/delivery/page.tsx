@@ -3,6 +3,7 @@
 import { useLocale } from "@/lib/locale-context";
 import { Card } from "@/components/ui/card";
 import { Clock, MapPin, Package, Truck, CheckCircle2 } from "lucide-react";
+import Reveal from "@/components/reveal";
 
 export default function DeliveryPage() {
   const { t } = useLocale();
@@ -77,21 +78,20 @@ export default function DeliveryPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {deliverySteps.map((step, index) => (
-              <Card
-                key={index}
-                className="p-6 text-center hover:shadow-xl transition-all hover:-translate-y-1"
-              >
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
-                  {step.icon}
-                </div>
-                <div className="text-sm font-bold text-primary mb-2">
-                  {t("delivery.step")} {index + 1}
-                </div>
-                <h3 className="text-lg font-bold mb-2">{t(step.titleKey)}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {t(step.descKey)}
-                </p>
-              </Card>
+              <Reveal key={index} delay={index * 0.08} y={18}>
+                <Card className="p-6 text-center hover:shadow-xl transition-all hover:-translate-y-1">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
+                    {step.icon}
+                  </div>
+                  <div className="text-sm font-bold text-primary mb-2">
+                    {t("delivery.step")} {index + 1}
+                  </div>
+                  <h3 className="text-lg font-bold mb-2">{t(step.titleKey)}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {t(step.descKey)}
+                  </p>
+                </Card>
+              </Reveal>
             ))}
           </div>
         </div>
