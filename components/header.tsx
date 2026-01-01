@@ -2,6 +2,7 @@
 
 import type React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Search,
   User,
@@ -233,13 +234,13 @@ export function Header() {
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm md:text-lg">
-              360
-            </div>
-            <span className="text-lg md:text-2xl font-bold">
-              <span className="text-primary">360</span>
-              <span className="text-accent">logistics</span>
-            </span>
+            <Image
+              src="/brand/360-logistics-logo-pro.svg"
+              alt="360 Logistic"
+              width={200}
+              height={48}
+              priority
+            />
           </Link>
 
           <form

@@ -422,6 +422,7 @@ export interface CreateOrderItemInput {
   unitPrice: number
   name: string
   variationName: string
+  image?: string
 }
 
 export interface CreateOrderInput {
@@ -473,6 +474,7 @@ export async function createOrder(input: CreateOrderInput): Promise<{ orderId: s
     unit_price: it.unitPrice,
     name: it.name,
     variation_name: it.variationName,
+    image: (it as any).image ?? null,
   }))
 
   const { error: itemsError } = await supabase.from("order_items").insert(itemsPayload)
@@ -529,6 +531,105 @@ export async function fetchOrdersForUser(userId: string): Promise<OrderSummary[]
     status: o.status,
     itemsCount: countByOrderId.get(o.id) ?? 0,
   }))
+}
+
+// ---- Order detail (for account page) ----
+export interface OrderItemDetail {
+  name: string
+  variationName: string | null
+  quantity: number
+  unitPrice: number
+  image: string | null
+}
+
+export interface OrderDetail {
+  id: string
+  createdAt: string
+  total: number
+  items: OrderItemDetail[]
+}
+
+export async function fetchOrderDetail(orderId: string): Promise<OrderDetail | null> {
+  const { data: order, error: orderErr } = await supabase
+    .from("orders")
+    .select("id, created_at, total")
+    .eq("id", orderId)
+    .single()
+    .returns<any>()
+  if (orderErr || !order) return null
+
+  // Try to read snapshot image if the column exists; otherwise fall back to current images
+  let mapped: OrderItemDetail[] = []
+  try {
+    const { data: items, error: itemsErr } = await supabase
+      .from("order_items")
+      .select("name, variation_name, quantity, unit_price, image")
+      .eq("order_id", orderId)
+      .order("id", { ascending: true })
+      .returns<any[]>()
+    if (itemsErr) throw itemsErr
+    mapped = (items ?? []).map((it) => ({
+      name: it.name,
+      variationName: it.variation_name ?? null,
+      quantity: it.quantity ?? 0,
+      unitPrice: it.unit_price ?? 0,
+      image: it.image ?? null,
+    }))
+  } catch (_e: any) {
+    // Fallback path: query without image column and compute images from products/variations
+    const { data: items2, error: itemsErr2 } = await supabase
+      .from("order_items")
+      .select("name, variation_name, quantity, unit_price, product_id, variation_id")
+      .eq("order_id", orderId)
+      .order("id", { ascending: true })
+      .returns<any[]>()
+    if (itemsErr2) return null
+
+    const productIds = Array.from(
+      new Set((items2 ?? []).map((i) => i.product_id).filter(Boolean)),
+    )
+    const variationIds = Array.from(
+      new Set((items2 ?? []).map((i) => i.variation_id).filter(Boolean)),
+    )
+
+    const [prodRes, varRes] = await Promise.all([
+      productIds.length
+        ? supabase
+            .from("products")
+            .select("id, image")
+            .in("id", productIds)
+            .returns<any[]>()
+        : Promise.resolve({ data: [] as any[] }),
+      variationIds.length
+        ? supabase
+            .from("product_variations")
+            .select("id, imageUrl")
+            .in("id", variationIds)
+            .returns<any[]>()
+        : Promise.resolve({ data: [] as any[] }),
+    ])
+
+    const prodMap = new Map<string, string | null>()
+    ;(prodRes.data ?? []).forEach((p: any) => prodMap.set(p.id, p.image ?? null))
+    const varMap = new Map<string, string | null>()
+    ;(varRes.data ?? []).forEach((v: any) => varMap.set(v.id, v.imageUrl ?? null))
+
+    mapped = (items2 ?? []).map((it) => ({
+      name: it.name,
+      variationName: it.variation_name ?? null,
+      quantity: it.quantity ?? 0,
+      unitPrice: it.unit_price ?? 0,
+      image:
+        (it.variation_id ? varMap.get(it.variation_id) : prodMap.get(it.product_id)) ?? null,
+    }))
+  }
+
+  return {
+    id: order.id,
+    createdAt: order.created_at,
+    total: order.total,
+    items: mapped,
+  }
 }
 
 // ---- Promo codes (admin CRUD) ----

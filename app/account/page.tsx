@@ -286,9 +286,13 @@ export default function AccountPage() {
                           <p className="font-bold">
                             {order.total.toFixed(2)} RSD
                           </p>
-                          <p className="text-sm text-muted-foreground">
-                            {order.status}
-                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => router.push(`/account/orders/${order.id}`)}
+                          >
+                            Prikaži detalje
+                          </Button>
                         </div>
                       </div>
                       <Separator className="mt-4" />

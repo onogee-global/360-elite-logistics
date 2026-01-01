@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -44,9 +45,16 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen">
-      <div className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
-        <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10" />
-        <div className="container mx-auto px-4 py-20 md:py-32">
+      <div className="relative overflow-hidden">
+        <Image
+          src="/brand/hero-breathtaking.svg"
+          alt="360 Logistic hero"
+          fill
+          priority
+          className="object-cover -z-10"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/0 to-background/40 -z-10" />
+        <div className="container mx-auto px-4 py-24 md:py-40">
           <div className="max-w-3xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
               <Sparkles className="h-4 w-4" />
@@ -58,6 +66,7 @@ export default function HomePage() {
             <p className="text-xl text-muted-foreground mb-8 text-pretty leading-relaxed">
               {t("hero.subtitle")}
             </p>
+
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
                 size="lg"
