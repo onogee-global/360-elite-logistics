@@ -30,13 +30,13 @@ export default function LoginPage() {
     password: "",
   });
 
-  // If already logged in, go to account
+  // If already logged in, go to home
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const user = await getCurrentUser();
       if (!cancelled && user) {
-        router.replace("/account");
+        router.replace("/");
       }
     })();
     return () => {
@@ -64,7 +64,7 @@ export default function LoginPage() {
       });
 
       const redirect = searchParams.get("redirect");
-      router.push(redirect || "/account");
+      router.push(redirect || "/");
     } catch (err: any) {
       toast({
         title: "Prijava neuspešna",
