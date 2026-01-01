@@ -249,7 +249,7 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
             </p>
             <div className="flex items-baseline gap-2 md:gap-3">
               <>
-                {product.discount ? (
+                {selectedIsProductBase && product.discount ? (
                   <>
                     <span className="text-3xl md:text-4xl font-bold">
                       {effectivePrice.toFixed(2)} RSD

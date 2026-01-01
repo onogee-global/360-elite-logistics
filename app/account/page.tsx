@@ -15,12 +15,13 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { User, Package, MapPin, Settings } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { fetchOrdersForUser, type OrderSummary } from "@/lib/supabase";
 
 export default function AccountPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [authChecked, setAuthChecked] = useState(false);
   const [profileData, setProfileData] = useState({
@@ -35,6 +36,7 @@ export default function AccountPage() {
     country: "",
   });
   const [orders, setOrders] = useState<OrderSummary[]>([]);
+  const [activeTab, setActiveTab] = useState<"account" | "orders">("account");
 
   useEffect(() => {
     let cancelled = false;
@@ -68,10 +70,27 @@ export default function AccountPage() {
       setAuthChecked(true);
     }
     load();
+    // Restore UI state: tab and scroll position
+    const urlTab = (searchParams?.get("tab") as "account" | "orders" | null) ?? null;
+    const savedTab = (typeof window !== "undefined"
+      ? (sessionStorage.getItem("account.activeTab") as "account" | "orders" | null)
+      : null) ?? null;
+    const nextTab = urlTab || savedTab;
+    if (nextTab) setActiveTab(nextTab);
+    const resume = typeof window !== "undefined" ? sessionStorage.getItem("account.resume") : null;
+    if (resume) {
+      try {
+        const { scrollY } = JSON.parse(resume) as { scrollY?: number };
+        if (typeof scrollY === "number") {
+          requestAnimationFrame(() => window.scrollTo(0, scrollY));
+        }
+      } catch {}
+      sessionStorage.removeItem("account.resume");
+    }
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [router, searchParams]);
 
   const handleSaveAccount = async () => {
     try {
@@ -122,7 +141,23 @@ export default function AccountPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="account" className="space-y-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={(val) => {
+          const v = (val as "account" | "orders") ?? "account";
+          setActiveTab(v);
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem("account.activeTab", v);
+          }
+          // Update URL (shallow) to persist tab
+          if (typeof window !== "undefined") {
+            const url = new URL(window.location.href);
+            url.searchParams.set("tab", v);
+            router.replace(url.pathname + "?" + url.searchParams.toString());
+          }
+        }}
+        className="space-y-6"
+      >
         <TabsList className="grid w-full grid-cols-2 lg:w-auto lg:inline-grid">
           <TabsTrigger value="account" className="gap-2">
             <User className="h-4 w-4" />
@@ -289,7 +324,20 @@ export default function AccountPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => router.push(`/account/orders/${order.id}`)}
+                            onClick={() => {
+                              if (typeof window !== "undefined") {
+                                sessionStorage.setItem(
+                                  "account.resume",
+                                  JSON.stringify({
+                                    tab: activeTab,
+                                    scrollY: window.scrollY,
+                                    ts: Date.now(),
+                                  }),
+                                );
+                                sessionStorage.setItem("account.activeTab", activeTab);
+                              }
+                              router.push(`/account/orders/${order.id}`);
+                            }}
                           >
                             Prikaži detalje
                           </Button>
