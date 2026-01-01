@@ -3,6 +3,7 @@
 import { useLocale } from "@/lib/locale-context"
 import { Card } from "@/components/ui/card"
 import { Package, Truck, Users, Award, Target, Heart } from "lucide-react"
+import Counter from "@/components/counter"
 
 export default function AboutPage() {
   const { t } = useLocale()
@@ -26,9 +27,9 @@ export default function AboutPage() {
   ]
 
   const stats = [
-    { icon: <Package className="h-10 w-10" />, value: "10,000+", labelKey: "about.stat1" },
-    { icon: <Users className="h-10 w-10" />, value: "5,000+", labelKey: "about.stat2" },
-    { icon: <Truck className="h-10 w-10" />, value: "50+", labelKey: "about.stat3" },
+    { icon: <Package className="h-10 w-10" />, value: 10000, suffix: "+", labelKey: "about.stat1" },
+    { icon: <Users className="h-10 w-10" />, value: 5000, suffix: "+", labelKey: "about.stat2" },
+    { icon: <Truck className="h-10 w-10" />, value: 50, suffix: "+", labelKey: "about.stat3" },
   ]
 
   return (
@@ -52,7 +53,9 @@ export default function AboutPage() {
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
                 {stat.icon}
               </div>
-              <div className="text-4xl font-bold mb-2">{stat.value}</div>
+              <div className="text-4xl font-bold mb-2">
+                <Counter to={stat.value as number} durationMs={1400} suffix={stat.suffix as string} />
+              </div>
               <div className="text-muted-foreground">{t(stat.labelKey)}</div>
             </Card>
           ))}
