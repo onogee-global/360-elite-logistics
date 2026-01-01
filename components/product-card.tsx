@@ -16,9 +16,10 @@ import { useRouter } from "next/navigation";
 interface ProductCardProps {
   product: Product;
   categoryName?: string;
+  promoVariationId?: string;
 }
 
-export function ProductCard({ product, categoryName }: ProductCardProps) {
+export function ProductCard({ product, categoryName, promoVariationId }: ProductCardProps) {
   const addItem = useCartStore((state) => state.addItem);
   const { toast } = useToast();
   const { locale, t } = useLocale();
@@ -26,8 +27,10 @@ export function ProductCard({ product, categoryName }: ProductCardProps) {
 
   const handleAddToCart = () => {
     const variations = product.variations ?? [];
-    let variationToAdd: ProductVariation;
-    if (variations.length === 1) {
+    let variationToAdd: ProductVariation | undefined;
+    if (promoVariationId) {
+      variationToAdd = variations.find((v) => v.id === promoVariationId) as ProductVariation | undefined;
+    } else if (variations.length === 1) {
       variationToAdd = variations[0] as ProductVariation;
     } else {
       // Add base product as pseudo-variation to match cart store expectations
@@ -44,6 +47,7 @@ export function ProductCard({ product, categoryName }: ProductCardProps) {
         isActive: true,
       } as ProductVariation;
     }
+    if (!variationToAdd) return;
     addItem(product, variationToAdd);
     toast({
       title: t("product.addedToCart"),
@@ -53,34 +57,75 @@ export function ProductCard({ product, categoryName }: ProductCardProps) {
     });
   };
 
-  const basePrice = product.price ?? 0;
+  const basePrice = typeof product.price === "number" ? product.price : 0;
+  const variationsArr = product.variations ?? [];
   const minVariationPrice =
-    product.variations && product.variations.length > 0
-      ? Math.min(...product.variations.map((v) => v.price))
+    variationsArr.length > 0
+      ? Math.min(...variationsArr.map((v) => v.price))
       : undefined;
   const displayBasePrice = minVariationPrice ?? basePrice;
-  const finalPrice =
-    product.discount && displayBasePrice
-      ? displayBasePrice * (1 - product.discount / 100)
-      : displayBasePrice;
+  // Determine pricing to display
+  let priceNow: number = displayBasePrice ?? 0;
+  let priceOriginal: number | undefined = undefined;
+  let promoVar: ProductVariation | undefined = undefined;
+  if (promoVariationId) {
+    const v = variationsArr.find((vv) => vv.id === promoVariationId);
+    const vd = (v as any)?.discount as number | undefined;
+    if (v && typeof vd === "number" && vd > 0) {
+      promoVar = v;
+      priceNow = v.price * (1 - vd / 100);
+      priceOriginal = v.price;
+    } else {
+      priceNow = displayBasePrice ?? 0;
+      priceOriginal = undefined;
+    }
+  } else {
+    // Compute best discounted candidate among base or any variation
+    const candidates: Array<{ now: number; original: number; kind: "base" | "variation"; varRef?: ProductVariation }> = [];
+    if (typeof product.discount === "number" && product.discount > 0 && basePrice > 0) {
+      candidates.push({ now: basePrice * (1 - product.discount / 100), original: basePrice, kind: "base" });
+    }
+    for (const v of variationsArr) {
+      const vd = (v as any)?.discount as number | undefined;
+      if (typeof vd === "number" && vd > 0) {
+        candidates.push({ now: v.price * (1 - vd / 100), original: v.price, kind: "variation", varRef: v });
+      }
+    }
+    if (candidates.length > 0) {
+      const best = candidates.reduce((min, c) => (c.now < min.now ? c : min), candidates[0]);
+      priceNow = best.now;
+      priceOriginal = best.original;
+      if (best.kind === "variation" && best.varRef) promoVar = best.varRef;
+    } else {
+      priceNow = displayBasePrice ?? 0;
+      priceOriginal = undefined;
+    }
+  }
+  const promoPct =
+    typeof priceOriginal === "number" && priceOriginal > 0
+      ? Math.round((1 - priceNow / priceOriginal) * 100)
+      : undefined;
   const productName = locale === "sr" ? product.name : product.nameEn;
   const productUnit = locale === "sr" ? product.unit : product.unitEn;
+  const displayName =
+    promoVar ? (locale === "sr" ? promoVar.name : promoVar.nameEn) : productName;
+  const displayUnit = promoVar ? promoVar.unit : productUnit;
 
   // categoryName is provided by callers that know the category list
 
   return (
     <Card className="group relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 h-full flex flex-col">
-      {product.discount && (
+      {typeof promoPct === "number" && promoPct > 0 && (
         <Badge className="absolute top-3 right-3 z-10 bg-gradient-to-r from-destructive to-destructive/80 text-destructive-foreground shadow-lg px-3 py-1 text-sm font-bold">
-          <Sparkles className="h-3 w-3 mr-1 inline" />-{product.discount}%
+          <Sparkles className="h-3 w-3 mr-1 inline" />-{promoPct}%
         </Badge>
       )}
 
       <Link href={`/products/${product.id}`}>
         <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-muted/50 to-muted">
           <Image
-            src={product.image || "/placeholder.svg"}
-            alt={productName}
+            src={(promoVar?.imageUrl || product.image || "/placeholder.svg") as string}
+            alt={displayName}
             fill
             className="object-contain p-4 group-hover:scale-110 transition-transform duration-500"
           />
@@ -96,23 +141,23 @@ export function ProductCard({ product, categoryName }: ProductCardProps) {
         )}
         <Link href={`/products/${product.id}`}>
           <h3 className="font-semibold text-base mb-2 line-clamp-2 group-hover:text-primary transition-colors leading-snug">
-            {productName}
+            {displayName}
           </h3>
         </Link>
-        <p className="text-sm text-muted-foreground mb-3">{productUnit}</p>
+        <p className="text-sm text-muted-foreground mb-3">{displayUnit}</p>
         <div className="flex items-baseline gap-2 flex-wrap">
-          {product.discount ? (
+          {typeof priceOriginal === "number" ? (
             <>
               <span className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                {finalPrice.toFixed(2)} RSD
+                {priceNow.toFixed(2)} RSD
               </span>
               <span className="text-sm text-muted-foreground line-through">
-                {displayBasePrice.toFixed(2)} RSD
+                {priceOriginal.toFixed(2)} RSD
               </span>
             </>
           ) : (
             <span className="text-2xl font-bold">
-              {displayBasePrice.toFixed(2)} RSD
+              {priceNow.toFixed(2)} RSD
             </span>
           )}
         </div>

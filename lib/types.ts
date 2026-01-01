@@ -9,6 +9,7 @@ export interface ProductVariation {
   inStock: boolean
   imageUrl?: string
   isActive?: boolean
+  discount?: number
 }
 
 export interface Product {

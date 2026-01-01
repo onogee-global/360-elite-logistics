@@ -61,7 +61,8 @@ export async function fetchProductsWithVariations(): Promise<Product[]> {
         unitEn,
         inStock,
         imageUrl,
-        isActive
+        isActive,
+        discount
       )
     `,
     )
@@ -114,7 +115,8 @@ export async function fetchProductById(id: string): Promise<Product | null> {
         unitEn,
         inStock,
         imageUrl,
-        isActive
+        isActive,
+        discount
       )
     `,
     )

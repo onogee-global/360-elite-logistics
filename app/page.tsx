@@ -38,10 +38,24 @@ export default function HomePage() {
     };
   }, []);
 
-  const featuredProducts = useMemo(
-    () => products.filter((p) => p.discount).slice(0, 8),
-    [products]
-  );
+  // Special offers entries: one per discounted product (base) and one per discounted variation
+  const featuredOffers = useMemo(() => {
+    const items: Array<{ product: Product; promoVariationId?: string }> = [];
+    for (const p of products) {
+      if (typeof p.discount === "number" && p.discount > 0) {
+        items.push({ product: p });
+      }
+      if (Array.isArray(p.variations)) {
+        for (const v of p.variations) {
+          const vd = (v as any)?.discount as number | undefined;
+          if (typeof vd === "number" && vd > 0) {
+            items.push({ product: p, promoVariationId: v.id });
+          }
+        }
+      }
+    }
+    return items.slice(0, 8);
+  }, [products]);
 
   return (
     <div className="min-h-screen">
@@ -142,7 +156,7 @@ export default function HomePage() {
             </Button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {featuredProducts.map((product) => {
+            {featuredOffers.map(({ product, promoVariationId }) => {
               const cat = categories.find((c) => c.id === product.categoryId);
               const catName = cat
                 ? locale === "en"
@@ -151,9 +165,10 @@ export default function HomePage() {
                 : undefined;
               return (
                 <ProductCard
-                  key={product.id}
+                  key={`${product.id}-${promoVariationId ?? "base"}`}
                   product={product}
                   categoryName={catName}
+                  promoVariationId={promoVariationId}
                 />
               );
             })}

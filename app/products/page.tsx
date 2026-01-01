@@ -78,7 +78,16 @@ export default function ProductsPage() {
 
     // Filter by discount
     if (showDiscountOnly) {
-      filtered = filtered.filter((p) => !!p.discount && p.discount > 0);
+      filtered = filtered.filter((p) => {
+        const productHasDiscount =
+          typeof p.discount === "number" && p.discount > 0;
+        const anyVariationDiscount =
+          Array.isArray(p.variations) &&
+          p.variations.some(
+            (v: any) => typeof v?.discount === "number" && v.discount > 0
+          );
+        return productHasDiscount || anyVariationDiscount;
+      });
     }
 
     // Sort
