@@ -110,8 +110,9 @@ export default function CheckoutPage() {
       // Build order payload
       const orderItems = items.map((item) => {
         const basePrice = item.variation.price;
+        const isBaseOption = item.variation.id.startsWith("base-");
         const finalUnit =
-          item.product.discount && item.product.discount > 0
+          isBaseOption && item.product.discount && item.product.discount > 0
             ? basePrice * (1 - item.product.discount / 100)
             : basePrice;
         const variationName =

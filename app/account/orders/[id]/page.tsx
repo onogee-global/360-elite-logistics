@@ -7,7 +7,6 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import Image from "next/image";
 
 export default function OrderDetailPage({
   params,
@@ -82,24 +81,13 @@ export default function OrderDetailPage({
                 key={idx}
                 className="flex items-center justify-between gap-3"
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="relative h-12 w-12 rounded overflow-hidden flex-shrink-0 bg-white">
-                    <Image
-                      src={it.image || "/placeholder.svg"}
-                      alt={it.name}
-                      fill
-                      className="object-contain p-1"
-                    />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-medium truncate">
-                      {it.name}
-                      {it.variationName ? ` — ${it.variationName}` : ""}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {it.quantity} × {it.unitPrice.toFixed(2)} RSD
-                    </p>
-                  </div>
+                <div className="min-w-0">
+                  <p className="font-medium truncate">
+                    {(it.variationName && it.variationName.trim()) || it.name}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {it.quantity} × {it.unitPrice.toFixed(2)} RSD
+                  </p>
                 </div>
                 <div className="font-semibold whitespace-nowrap">
                   {(it.quantity * it.unitPrice).toFixed(2)} RSD
