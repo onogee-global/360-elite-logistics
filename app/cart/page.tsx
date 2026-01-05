@@ -35,7 +35,7 @@ export default function CartPage() {
   const promoDiscountAmount = appliedPromo
     ? subtotal * (appliedPromo.discount / 100)
     : 0;
-  const deliveryFee = subtotal > 0 ? (subtotal >= 3000 ? 0 : 199) : 0;
+  const deliveryFee = subtotal > 0 ? (subtotal >= 5000 ? 0 : 800) : 0;
   const total = subtotal - promoDiscountAmount + deliveryFee;
 
   if (items.length === 0) {

@@ -5,10 +5,12 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { CheckCircle2, Package, Home } from "lucide-react"
+import { useLocale } from "@/lib/locale-context"
 
 export default function CheckoutSuccessPage() {
   const searchParams = useSearchParams()
   const orderId = searchParams.get("orderId") || "N/A"
+  const { t, locale } = useLocale()
 
   return (
     <div className="container mx-auto px-4 py-16">
@@ -20,15 +22,13 @@ export default function CheckoutSuccessPage() {
             </div>
           </div>
 
-          <h1 className="text-3xl font-bold mb-4">Porudžbina uspešno primljena!</h1>
-          <p className="text-muted-foreground mb-8">
-            Hvala vam na poverenju. Vaša porudžbina je uspešno primljena i biće dostavljena u najkraćem mogućem roku.
-          </p>
+          <h1 className="text-3xl font-bold mb-4">{t("orderSuccess")}</h1>
+          <p className="text-muted-foreground mb-8">{t("orderSuccessMessage")}</p>
 
           <div className="bg-muted rounded-lg p-6 mb-8">
             <div className="flex items-center justify-center gap-2 mb-2">
               <Package className="h-5 w-5 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Broj porudžbine</span>
+              <span className="text-sm text-muted-foreground">{t("orderNumber")}</span>
             </div>
             <p className="text-2xl font-bold">{orderId}</p>
           </div>
@@ -39,9 +39,13 @@ export default function CheckoutSuccessPage() {
                 1
               </div>
               <div>
-                <h3 className="font-semibold mb-1">Potvrda porudžbine</h3>
+                <h3 className="font-semibold mb-1">
+                  {locale === "en" ? "Order confirmation" : "Potvrda porudžbine"}
+                </h3>
                 <p className="text-sm text-muted-foreground">
-                  Poslali smo vam email sa detaljima porudžbine na vašu email adresu.
+                  {locale === "en"
+                    ? "We sent you an email with order details."
+                    : "Poslali smo vam email sa detaljima porudžbine."}
                 </p>
               </div>
             </div>
@@ -51,9 +55,13 @@ export default function CheckoutSuccessPage() {
                 2
               </div>
               <div>
-                <h3 className="font-semibold mb-1">Priprema porudžbine</h3>
+                <h3 className="font-semibold mb-1">
+                  {locale === "en" ? "Order preparation" : "Priprema porudžbine"}
+                </h3>
                 <p className="text-sm text-muted-foreground">
-                  Naš tim će pripremiti vašu porudžbinu i kontaktirati vas za potvrdu termina dostave.
+                  {locale === "en"
+                    ? "Our team will prepare your order and contact you to confirm delivery time."
+                    : "Naš tim će pripremiti vašu porudžbinu i kontaktirati vas za potvrdu termina dostave."}
                 </p>
               </div>
             </div>
@@ -63,9 +71,13 @@ export default function CheckoutSuccessPage() {
                 3
               </div>
               <div>
-                <h3 className="font-semibold mb-1">Dostava</h3>
+                <h3 className="font-semibold mb-1">
+                  {locale === "en" ? "Delivery" : "Dostava"}
+                </h3>
                 <p className="text-sm text-muted-foreground">
-                  Vaša porudžbina će biti dostavljena na adresu koju ste naveli u dogovorenom terminu.
+                  {locale === "en"
+                    ? "Your order will be delivered to the address you provided at the agreed time."
+                    : "Vaša porudžbina će biti dostavljena na adresu koju ste naveli u dogovorenom terminu."}
                 </p>
               </div>
             </div>
@@ -75,11 +87,11 @@ export default function CheckoutSuccessPage() {
             <Button size="lg" asChild>
               <Link href="/">
                 <Home className="mr-2 h-4 w-4" />
-                Nazad na početnu
+                {locale === "en" ? "Back to home" : "Nazad na početnu"}
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
-              <Link href="/products">Nastavi kupovinu</Link>
+              <Link href="/products">{locale === "en" ? "Continue shopping" : "Nastavi kupovinu"}</Link>
             </Button>
           </div>
         </CardContent>

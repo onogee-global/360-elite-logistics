@@ -18,6 +18,7 @@ import { User, Package, MapPin, Settings } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { fetchOrdersForUser, type OrderSummary, getUserProfile, upsertUserProfile, type UserProfile } from "@/lib/supabase";
+import { useLocale } from "@/lib/locale-context";
 
 export default function AccountPage() {
   const router = useRouter();
@@ -27,6 +28,7 @@ export default function AccountPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [activeTab, setActiveTab] = useState<"account" | "orders">("account");
+  const { t, locale } = useLocale();
 
   useEffect(() => {
     let cancelled = false;
@@ -106,13 +108,13 @@ export default function AccountPage() {
       if (!profile) return;
       await upsertUserProfile(profile);
       toast({
-        title: "Podaci sačuvani",
-        description: "Profil je uspešno sačuvan",
+        title: t("account.savedTitle"),
+        description: t("account.savedDesc"),
       });
     } catch (err: any) {
       toast({
-        title: "Greška pri čuvanju",
-        description: err?.message || "Pokušajte ponovo kasnije",
+        title: t("account.saveErrorTitle"),
+        description: err?.message || t("account.saveErrorDesc"),
         variant: "destructive",
       });
     }
@@ -129,9 +131,10 @@ export default function AccountPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Moj nalog</h1>
+        <h1 className="text-3xl font-bold mb-2">{t("account.title")}</h1>
         <p className="text-muted-foreground">
-          Upravljajte vašim nalogom i porudžbinama
+          {/* Simple generic subtitle not in i18n to keep noise low */}
+          {locale === "en" ? "Manage your account and orders" : "Upravljajte vašim nalogom i porudžbinama"}
         </p>
       </div>
 
@@ -155,11 +158,11 @@ export default function AccountPage() {
         <TabsList className="grid w-full grid-cols-2 lg:w-auto lg:inline-grid">
           <TabsTrigger value="account" className="gap-2">
             <User className="h-4 w-4" />
-            <span className="hidden sm:inline">Profil i adrese</span>
+            <span className="hidden sm:inline">{t("account.profileTab")}</span>
           </TabsTrigger>
           <TabsTrigger value="orders" className="gap-2">
             <Package className="h-4 w-4" />
-            <span className="hidden sm:inline">Porudžbine</span>
+            <span className="hidden sm:inline">{t("account.ordersTab")}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -169,15 +172,15 @@ export default function AccountPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings className="h-5 w-5" />
-                Podaci o kompaniji
+                {t("account.profileTitle")}
               </CardTitle>
               <CardDescription>
-                Popunite podatke za dostavu i kontakt
+                {t("account.profileDesc")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="company">Kompanija</Label>
+                <Label htmlFor="company">{t("account.company")}</Label>
                 <Input
                   id="company"
                   value={profile?.companyName ?? ""}
@@ -186,7 +189,7 @@ export default function AccountPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="pib">PIB</Label>
+                <Label htmlFor="pib">{t("account.pib")}</Label>
                 <Input
                   id="pib"
                   value={profile?.pib ?? ""}
@@ -195,7 +198,7 @@ export default function AccountPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="addr-street">Adresa</Label>
+                <Label htmlFor="addr-street">{t("account.address")}</Label>
                 <Input
                   id="addr-street"
                   value={profile?.address ?? ""}
@@ -205,7 +208,7 @@ export default function AccountPage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label htmlFor="addr-city">Grad</Label>
+                  <Label htmlFor="addr-city">{t("account.city")}</Label>
                   <Input
                     id="addr-city"
                     value={profile?.city ?? ""}
@@ -214,7 +217,7 @@ export default function AccountPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Kontakt telefon</Label>
+                  <Label htmlFor="phone">{t("account.phone")}</Label>
                   <Input
                     id="phone"
                     type="tel"
@@ -225,7 +228,7 @@ export default function AccountPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="contact-name">Ime i prezime (kontakt)</Label>
+                <Label htmlFor="contact-name">{t("account.contactName")}</Label>
                 <Input
                   id="contact-name"
                   value={profile?.contactName ?? ""}
@@ -234,7 +237,7 @@ export default function AccountPage() {
                 />
               </div>
               <div className="pt-4">
-                <Button onClick={handleSaveAccount}>Sačuvaj</Button>
+                <Button onClick={handleSaveAccount}>{t("account.save")}</Button>
               </div>
             </CardContent>
           </Card>
@@ -244,14 +247,14 @@ export default function AccountPage() {
         <TabsContent value="orders" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Moje porudžbine</CardTitle>
-              <CardDescription>Pregled svih vaših porudžbina</CardDescription>
+              <CardTitle>{t("account.ordersTitle")}</CardTitle>
+              <CardDescription>{t("account.ordersSubtitle")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {orders.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
-                    Nemate porudžbina.
+                    {locale === "en" ? "You have no orders." : "Nemate porudžbina."}
                   </p>
                 ) : (
                   orders.map((order) => (
@@ -260,12 +263,15 @@ export default function AccountPage() {
                         <div>
                           <p className="font-semibold">
                             {typeof order.orderNumber === "number"
-                              ? `Porudžbina ${order.orderNumber}.`
-                              : `Porudžbina #${order.id}`}
+                              ? `${t("account.orderLabel")} ${order.orderNumber}.`
+                              : `${t("account.orderLabel")} #${order.id}`}
                           </p>
                           <p className="text-sm text-muted-foreground">
                             {new Date(order.createdAt).toLocaleString("sr-RS")}{" "}
-                            • {order.itemsCount} proizvoda
+                            • {order.itemsCount} {order.itemsCount === 1 ? t("product") : t("products")}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            ID: {order.id}
                           </p>
                         </div>
                         <div className="text-right">
@@ -290,7 +296,7 @@ export default function AccountPage() {
                               router.push(`/account/orders/${order.id}`);
                             }}
                           >
-                            Prikaži detalje
+                            {t("account.showDetails")}
                           </Button>
                         </div>
                       </div>

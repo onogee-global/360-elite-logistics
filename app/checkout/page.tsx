@@ -15,14 +15,14 @@ import { useToast } from "@/hooks/use-toast";
 import { Package, MapPin } from "lucide-react";
 import Image from "next/image";
 import { useLocale } from "@/lib/locale-context";
-import { supabase } from "@/lib/supabase";
+import { supabase, getUserProfile } from "@/lib/supabase";
 import { createOrder } from "@/lib/supabase";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, getTotal, clearCart } = useCartStore();
   const { toast } = useToast();
-  const { locale } = useLocale();
+  const { locale, t } = useLocale();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -36,9 +36,10 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
 
   const subtotal = getTotal();
-  const deliveryFee = subtotal >= 3000 ? 0 : 199;
+  const deliveryFee = subtotal >= 5000 ? 0 : 800;
   const total = subtotal + deliveryFee;
 
   // Require authenticated user for checkout
@@ -68,6 +69,21 @@ export default function CheckoutPage() {
             (meta.postalCode as string) ??
             prev.zip,
         }));
+        // Try to load profile overrides (from user_profiles)
+        try {
+          const profile = await getUserProfile(data.user.id);
+          if (profile) {
+            setFormData((prev) => ({
+              ...prev,
+              name: profile.contactName || prev.name,
+              phone: profile.phone || prev.phone,
+              address: profile.address || prev.address,
+              city: profile.city || prev.city,
+            }));
+          }
+        } catch {
+          // ignore profile read errors
+        }
         setAuthChecked(true);
       }
     }
@@ -98,6 +114,19 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
 
     try {
+      // Basic SR phone normalization/validation
+      const rawPhone = (formData.phone || "").replace(/\s+/g, "");
+      const normalizedPhone =
+        rawPhone.startsWith("+") ? rawPhone : rawPhone.startsWith("0") ? `+381${rawPhone.slice(1)}` : rawPhone;
+      const phoneValid = /^(\+3816\d{7,8}|06\d{7,8})$/.test(normalizedPhone);
+      if (!phoneValid) {
+        setPhoneError("invalid");
+        setIsSubmitting(false);
+        return;
+      } else {
+        setPhoneError(null);
+      }
+
       const { data } = await supabase.auth.getUser();
       const user = data.user;
       if (!user) {
@@ -136,7 +165,7 @@ export default function CheckoutPage() {
         userId: user.id,
         customerName: formData.name,
         customerEmail: formData.email,
-        customerPhone: formData.phone,
+        customerPhone: normalizedPhone,
         note: undefined,
         total: Number(total.toFixed(2)),
         address: {
@@ -159,7 +188,7 @@ export default function CheckoutPage() {
           body: JSON.stringify({
             orderId,
             customerEmail: formData.email,
-            customerPhone: formData.phone,
+            customerPhone: normalizedPhone,
             total,
             items: orderItems.map((it) => ({
               name: it.name,
@@ -199,7 +228,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">Plaćanje</h1>
+      <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">{t("checkoutTitle")}</h1>
 
       <form onSubmit={handleSubmit}>
         <div className="grid lg:grid-cols-3 gap-6 md:gap-8">
@@ -210,38 +239,45 @@ export default function CheckoutPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
                   <MapPin className="h-4 w-4 md:h-5 md:w-5" />
-                  Informacije o dostavi
+                  {t("cart.deliveryDetails")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Ime i prezime *</Label>
+                    <Label htmlFor="name">{t("contact.name")} *</Label>
                     <Input
                       id="name"
                       name="name"
                       value={formData.name}
                       onChange={handleInputChange}
                       required
-                      placeholder="Petar Petrović"
+                      placeholder={locale === "en" ? "John Doe" : "Petar Petrović"}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Telefon *</Label>
+                    <Label htmlFor="phone">{t("phoneNumber")} *</Label>
                     <Input
                       id="phone"
                       name="phone"
                       type="tel"
+                      inputMode="tel"
+                      pattern="^(\+3816\d{7,8}|06\d{7,8})$"
                       value={formData.phone}
                       onChange={handleInputChange}
                       required
                       placeholder="+381 60 123 4567"
                     />
+                    {phoneError && (
+                      <p className="text-xs text-destructive">
+                        {t("phoneInvalid") ?? "Unesite ispravan broj telefona (npr. +381601234567)"}
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
+                  <Label htmlFor="email">{t("contact.emailLabel")} *</Label>
                   <Input
                     id="email"
                     name="email"
@@ -249,36 +285,36 @@ export default function CheckoutPage() {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    placeholder="petar@example.com"
+                    placeholder="name@example.com"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="address">Adresa *</Label>
+                  <Label htmlFor="address">{t("contact.address")} *</Label>
                   <Input
                     id="address"
                     name="address"
                     value={formData.address}
                     onChange={handleInputChange}
                     required
-                    placeholder="Kneza Miloša 10"
+                    placeholder={locale === "en" ? "King Alexander Blvd 10" : "Kneza Miloša 10"}
                   />
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="city">Grad *</Label>
+                    <Label htmlFor="city">{t("city") ?? "Grad"} *</Label>
                     <Input
                       id="city"
                       name="city"
                       value={formData.city}
                       onChange={handleInputChange}
                       required
-                      placeholder="Beograd"
+                      placeholder={locale === "en" ? "Belgrade" : "Beograd"}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="zip">Poštanski broj *</Label>
+                    <Label htmlFor="zip">{t("zip") ?? "Poštanski broj"} *</Label>
                     <Input
                       id="zip"
                       name="zip"
@@ -301,17 +337,25 @@ export default function CheckoutPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
                   <Package className="h-4 w-4 md:h-5 md:w-5" />
-                  Pregled porudžbine
+                  {t("cart.orderDetails")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Products */}
                 <div className="space-y-3 max-h-64 overflow-y-auto">
                   {items.map((item) => {
+                    const isBaseItem = item.variation.id.startsWith("base-");
                     const basePrice = item.variation.price;
-                    const finalPrice = item.product.discount
-                      ? basePrice * (1 - item.product.discount / 100)
-                      : basePrice;
+                    const variationDiscount =
+                      !isBaseItem && typeof (item.variation as any)?.discount === "number"
+                        ? ((item.variation as any).discount as number)
+                        : 0;
+                    const finalPrice =
+                      isBaseItem && item.product.discount
+                        ? basePrice * (1 - (item.product.discount ?? 0) / 100)
+                        : variationDiscount > 0
+                        ? basePrice * (1 - variationDiscount / 100)
+                        : basePrice;
 
                     const productName =
                       locale === "en" ? item.product.nameEn : item.product.name;
@@ -360,17 +404,15 @@ export default function CheckoutPage() {
                 {/* Price Breakdown */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Proizvodi</span>
+                    <span className="text-muted-foreground">{t("cart.allProducts")}</span>
                     <span className="font-medium">
                       {subtotal.toFixed(2)} RSD
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Dostava</span>
+                    <span className="text-muted-foreground">{t("cart.delivery")}</span>
                     <span className="font-medium">
-                      {deliveryFee === 0
-                        ? "Besplatno"
-                        : `${deliveryFee.toFixed(2)} RSD`}
+                      {deliveryFee === 0 ? t("cart.free") : `${deliveryFee.toFixed(2)} RSD`}
                     </span>
                   </div>
                 </div>
@@ -380,7 +422,7 @@ export default function CheckoutPage() {
                 {/* Total */}
                 <div className="flex justify-between items-center">
                   <span className="text-base md:text-lg font-semibold">
-                    Ukupno
+                    {t("total")}
                   </span>
                   <span className="text-xl md:text-2xl font-bold">
                     {total.toFixed(2)} RSD
@@ -394,12 +436,11 @@ export default function CheckoutPage() {
                   className="w-full"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "Obrađuje se..." : "Potvrdi porudžbinu"}
+                  {isSubmitting ? (t("processing") ?? "Processing...") : t("placeOrder")}
                 </Button>
 
                 <p className="text-xs text-muted-foreground text-center">
-                  Klikom na dugme potvrđujete da ste pročitali i prihvatili naše
-                  uslove korišćenja
+                  {t("checkout.consent") ?? ""}
                 </p>
               </CardContent>
             </Card>
