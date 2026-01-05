@@ -103,6 +103,8 @@ export async function fetchProductsWithVariations(): Promise<Product[]> {
         product_id,
         name,
         nameEn,
+        description,
+        descriptionen,
         price,
         unit,
         unitEn,
@@ -203,6 +205,20 @@ export async function fetchCategories(): Promise<Category[]> {
   }
   // Subcategories fetched separately if needed; keep empty for now
   return data.map((c) => ({ id: c.id, name: c.name, nameEn: c.nameen, slug: c.slug, icon: c.icon, subcategories: [] })) as Category[]
+}
+
+export async function fetchCategoryById(id: string): Promise<Category | null> {
+  const { data, error } = await supabase
+    .from("categories")
+    .select("id, name, nameen, slug, icon")
+    .eq("id", id)
+    .single()
+    .returns<any>()
+  if (error && error.code !== "PGRST116") {
+    throw error
+  }
+  if (!data) return null
+  return { id: data.id, name: data.name, nameEn: data.nameen, slug: data.slug, icon: data.icon, subcategories: [] } as Category
 }
 
 // ---- Admin helpers (CRUD) ----

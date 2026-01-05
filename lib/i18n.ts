@@ -158,6 +158,10 @@ export const translations = {
     // Product card translations
     "product.addedToCart": "Dodato u korpu",
     "product.addedMessage": "je dodat u vašu korpu",
+    "product.selectOption": "Izaberite proizvod ili varijaciju",
+    "product.detailsTitle": "Detalji proizvoda",
+    "product.availability": "Dostupnost",
+    "back": "Nazad",
 
     // Checkout
     checkoutTitle: "Završi narudžbinu",
@@ -420,6 +424,10 @@ export const translations = {
     // Product card translations
     "product.addedToCart": "Added to cart",
     "product.addedMessage": "has been added to your cart",
+    "product.selectOption": "Select product or variation",
+    "product.detailsTitle": "Product details",
+    "product.availability": "Availability",
+    "back": "Back",
 
     // Checkout
     checkoutTitle: "Complete your order",

@@ -12,6 +12,7 @@ import { useCartStore } from "@/lib/cart-store";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
+import { useLocale } from "@/lib/locale-context";
 
 interface ProductDetailProps {
   product: Product;
@@ -19,6 +20,7 @@ interface ProductDetailProps {
 }
 
 export function ProductDetail({ product, category }: ProductDetailProps) {
+  const { locale, t } = useLocale();
   const [quantity, setQuantity] = useState(1);
   const [selectedKey, setSelectedKey] = useState<string | undefined>(undefined); // 'product' | variation.id
   const addItem = useCartStore((state) => state.addItem);
@@ -65,6 +67,25 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
     ? product.inStock ?? true
     : !!selectedVariation?.inStock;
 
+  // Display name/description switch with selected option
+  const displayName = selectedIsProductBase
+    ? locale === "en"
+      ? product.nameEn
+      : product.name
+    : locale === "en"
+    ? selectedVariation?.nameEn ?? product.nameEn
+    : selectedVariation?.name ?? product.name;
+  const displayDescription = selectedIsProductBase
+    ? locale === "en"
+      ? product.descriptionEn
+      : product.description
+    : locale === "en"
+    ? ((selectedVariation as any)?.descriptionen as string) ??
+      (selectedVariation as any)?.descriptionEn ??
+      product.descriptionEn
+    : ((selectedVariation as any)?.description as string) ??
+      product.description;
+
   const handleAddToCart = () => {
     // Create a pseudo-variation for base option to stay compatible with current cart store
     const variationToAdd: ProductVariation | undefined = selectedIsProductBase
@@ -99,14 +120,14 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground mb-4 md:mb-6 overflow-x-auto scrollbar-hide">
         <Link href="/" className="hover:text-foreground whitespace-nowrap">
-          Početna
+          {t("home")}
         </Link>
         <span>/</span>
         <Link
           href="/products"
           className="hover:text-foreground whitespace-nowrap"
         >
-          Proizvodi
+          {t("allProducts")}
         </Link>
         {category && (
           <>
@@ -115,7 +136,7 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
               href={`/products?category=${category.slug}`}
               className="hover:text-foreground whitespace-nowrap"
             >
-              {category.name}
+              {locale === "en" ? category.nameEn : category.name}
             </Link>
           </>
         )}
@@ -126,8 +147,8 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
       <Button variant="ghost" size="sm" className="mb-4 md:mb-6" asChild>
         <Link href="/products">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          <span className="hidden sm:inline">Nazad na proizvode</span>
-          <span className="sm:hidden">Nazad</span>
+          <span className="hidden sm:inline">{t("back")}</span>
+          <span className="sm:hidden">{t("back")}</span>
         </Link>
       </Button>
 
@@ -141,7 +162,7 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
           )}
           <Image
             src={selectedImage}
-            alt={product.name}
+            alt={displayName}
             fill
             className="object-cover"
           />
@@ -150,16 +171,11 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
         {/* Product Info */}
         <div className="space-y-4 md:space-y-6">
           <div>
-            {category && (
-              <p className="text-xs md:text-sm text-muted-foreground mb-2">
-                {category.icon} {category.name}
-              </p>
-            )}
             <h1 className="text-2xl md:text-3xl font-bold mb-2">
-              {product.name}
+              {displayName}
             </h1>
             <p className="text-sm md:text-base text-muted-foreground">
-              {product.description}
+              {displayDescription}
             </p>
           </div>
 
@@ -168,7 +184,7 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
           {/* Main + Variation Selector */}
           <div>
             <p className="text-sm font-medium mb-3">
-              Izaberite proizvod ili varijaciju
+              {t("product.selectOption")}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {/* Base product option */}
@@ -176,12 +192,22 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
                 type="button"
                 onClick={() => setSelectedKey("product")}
                 className={cn(
-                  "w-full rounded-md border px-3 py-2 text-left transition-colors",
+                  "w-full rounded-md border px-3 py-2 text-left transition-colors relative",
                   selectedIsProductBase
                     ? "border-primary bg-primary/5"
                     : "hover:bg-muted"
                 )}
               >
+                {product.discount && product.discount > 0 && (
+                  <div className="absolute -top-1 -right-1 z-10 pointer-events-none">
+                    <div className="relative">
+                      <span className="bg-destructive text-destructive-foreground text-[10px] md:text-xs font-bold px-2 py-1 rounded-md shadow-sm">
+                        -{product.discount}%
+                      </span>
+                      <span className="absolute right-1 -bottom-1 w-2 h-2 bg-destructive rotate-45 shadow-sm" />
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="relative h-10 w-10 rounded bg-muted overflow-hidden flex-shrink-0">
@@ -192,14 +218,13 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
                         className="object-cover"
                       />
                     </div>
-                    <span className="font-medium truncate">{product.name}</span>
+                    <span className="font-medium truncate">
+                      {locale === "en" ? product.nameEn : product.name}
+                    </span>
                   </div>
                   <span className="text-sm whitespace-nowrap">
                     {(product.price ?? 0).toFixed(2)} RSD
                   </span>
-                </div>
-                <div className="text-xs text-muted-foreground mt-0.5">
-                  Glavni proizvod
                 </div>
               </button>
               {effectiveVariations.map((v) => {
@@ -210,12 +235,22 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
                     type="button"
                     onClick={() => setSelectedKey(v.id)}
                     className={cn(
-                      "w-full rounded-md border px-3 py-2 text-left transition-colors",
+                      "w-full rounded-md border px-3 py-2 text-left transition-colors relative",
                       selected
                         ? "border-primary bg-primary/5"
                         : "hover:bg-muted"
                     )}
                   >
+                    {v.discount && v.discount > 0 && (
+                      <div className="absolute -top-1 -right-1 z-10 pointer-events-none">
+                        <div className="relative">
+                          <span className="bg-destructive text-destructive-foreground text-[10px] md:text-xs font-bold px-2 py-1 rounded-md shadow-sm">
+                            -{v.discount}%
+                          </span>
+                          <span className="absolute right-1 -bottom-1 w-2 h-2 bg-destructive rotate-45 shadow-sm" />
+                        </div>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="relative h-10 w-10 rounded bg-muted overflow-hidden flex-shrink-0">
@@ -223,22 +258,19 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
                             src={
                               v.imageUrl || product.image || "/placeholder.svg"
                             }
-                            alt={v.name}
+                            alt={locale === "en" ? v.nameEn : v.name}
                             fill
                             className="object-cover"
                           />
                         </div>
-                        <span className="font-medium truncate">{v.name}</span>
+                        <span className="font-medium truncate">
+                          {locale === "en" ? v.nameEn : v.name}
+                        </span>
                       </div>
                       <span className="text-sm whitespace-nowrap">
                         {v.price.toFixed(2)} RSD
                       </span>
                     </div>
-                    {v.unit && (
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        Pakovanje: {v.unit}
-                      </div>
-                    )}
                   </button>
                 );
               })}
@@ -263,18 +295,13 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
                 </span>
               )}
             </div>
-            {selectedUnit && (
-              <p className="text-xs md:text-sm text-muted-foreground mt-1">
-                Pakovanje: {selectedUnit}
-              </p>
-            )}
           </div>
 
           <Separator />
 
           {/* Quantity Selector */}
           <div>
-            <p className="text-sm font-medium mb-3">Količina</p>
+            <p className="text-sm font-medium mb-3">{t("quantity")}</p>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4">
               <div className="flex items-center border rounded-lg">
                 <Button
@@ -295,7 +322,7 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
                 </Button>
               </div>
               <span className="text-sm text-muted-foreground">
-                Ukupno: {(effectivePrice * quantity).toFixed(2)} RSD
+                {t("total")}: {(effectivePrice * quantity).toFixed(2)} RSD
               </span>
             </div>
           </div>
@@ -308,28 +335,30 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
             disabled={!selectedInStock || selectedPrice <= 0}
           >
             <ShoppingCart className="mr-2 h-5 w-5" />
-            {selectedInStock ? "Dodaj u korpu" : "Nema na stanju"}
+            {selectedInStock ? t("addToCart") : t("outOfStock")}
           </Button>
 
           {/* Product Details */}
           <Card>
             <CardContent className="p-4 md:p-6">
               <h3 className="font-semibold mb-4 text-sm md:text-base">
-                Detalji proizvoda
+                {t("product.detailsTitle")}
               </h3>
               <dl className="space-y-2 text-xs md:text-sm">
                 <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Kategorija:</dt>
-                  <dd className="font-medium">{category?.name}</dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Pakovanje:</dt>
-                  <dd className="font-medium">{selectedUnit ?? "-"}</dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Dostupnost:</dt>
+                  <dt className="text-muted-foreground">
+                    {t("field.category")}:
+                  </dt>
                   <dd className="font-medium">
-                    {selectedInStock ? "Na stanju" : "Nema na stanju"}
+                    {locale === "en" ? category?.nameEn : category?.name}
+                  </dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">
+                    {t("product.availability")}:
+                  </dt>
+                  <dd className="font-medium">
+                    {selectedInStock ? t("inStock") : t("outOfStock")}
                   </dd>
                 </div>
               </dl>

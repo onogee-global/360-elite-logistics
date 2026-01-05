@@ -3,6 +3,8 @@ export interface ProductVariation {
   productId: string
   name: string
   nameEn: string
+  description?: string
+  descriptionEn?: string
   price: number
   unit: string
   unitEn: string

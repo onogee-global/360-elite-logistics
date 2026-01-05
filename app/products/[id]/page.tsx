@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { ProductDetail } from "@/components/product-detail";
-import { fetchProductById } from "@/lib/supabase";
+import { fetchProductById, fetchCategoryById } from "@/lib/supabase";
 
 interface ProductPageProps {
   params: Promise<{ id: string }>;
@@ -14,8 +14,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  // Category is optional in detail UI; fetch when needed
-  return <ProductDetail product={product} />;
+  const category = product.categoryId ? await fetchCategoryById(product.categoryId) : null;
+  return <ProductDetail product={product} category={category ?? undefined} />;
 }
 
 export async function generateStaticParams() {
