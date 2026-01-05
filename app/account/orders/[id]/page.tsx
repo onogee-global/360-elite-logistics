@@ -19,6 +19,7 @@ export default function OrderDetailPage({
   const [order, setOrder] = useState<any>(null);
   const { id } = usePromise(params);
   const addItem = useCartStore((s) => s.addItem);
+  const clearCart = useCartStore((s) => s.clearCart);
 
   useEffect(() => {
     let cancelled = false;
@@ -45,6 +46,8 @@ export default function OrderDetailPage({
   const handleRepeatOrder = async () => {
     if (!order) return;
     const { fetchProductById } = await import("@/lib/supabase");
+    // Clear current cart before rebuilding from order
+    clearCart();
     let added = 0;
     for (const it of order.items as Array<any>) {
       try {
