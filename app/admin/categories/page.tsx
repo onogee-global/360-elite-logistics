@@ -22,6 +22,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Search, Plus, Edit, Trash2 } from "lucide-react";
+import ImageDropzone from "@/components/admin/ImageDropzone";
 import { useToast } from "@/hooks/use-toast";
 import {
   createCategory,
@@ -44,6 +45,7 @@ interface CategoryFormValues {
   nameEn: string;
   slug: string;
   icon?: string;
+  image?: string;
 }
 
 export default function AdminCategoriesPage() {
@@ -114,6 +116,7 @@ export default function AdminCategoriesPage() {
       nameEn: "",
       slug: "",
       icon: "",
+      image: "",
     });
   };
 
@@ -129,6 +132,7 @@ export default function AdminCategoriesPage() {
       nameEn: cat.nameEn ?? "",
       slug: cat.slug ?? "",
       icon: cat.icon ?? "",
+      image: cat.image ?? "",
     });
     setOpen(true);
   };
@@ -159,6 +163,7 @@ export default function AdminCategoriesPage() {
           nameEn: editing.nameEn,
           slug: editing.slug,
           icon: editing.icon,
+          image: editing.image,
         });
         setCategories((prev) =>
           prev.map((c) => (c.id === editing.id ? { ...c, ...editing } : c))
@@ -170,6 +175,7 @@ export default function AdminCategoriesPage() {
           nameEn: editing.nameEn,
           slug: editing.slug,
           icon: editing.icon,
+          image: editing.image,
         });
         setCategories((prev) => [
           { id, ...editing, subcategories: [] },
@@ -381,6 +387,20 @@ export default function AdminCategoriesPage() {
                   }
                   placeholder="🍽️"
                 />
+              </div>
+              <div className="space-y-2">
+                <div className="text-sm font-medium">{t("field.image")}</div>
+                <ImageDropzone
+                  folder="categories"
+                  value={editing?.image ?? ""}
+                  onChange={(url) =>
+                    setEditing((prev) => ({ ...(prev as any), image: url }))
+                  }
+                  label={t("field.image")}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t("field.image")} {t("common.select")} ({t("admin.variant.imageRequired")?.replace(" (obavezno)", "")})
+                </p>
               </div>
             </div>
           </div>

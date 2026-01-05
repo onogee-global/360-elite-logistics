@@ -198,19 +198,19 @@ export async function fetchProductById(id: string): Promise<Product | null> {
 export async function fetchCategories(): Promise<Category[]> {
   const { data, error } = await supabase
     .from("categories")
-    .select("id, name, nameen, slug, icon")
+    .select("id, name, nameen, slug, icon, image")
     .returns<any[]>()
   if (error || !data) {
     throw error ?? new Error("Failed to fetch categories")
   }
   // Subcategories fetched separately if needed; keep empty for now
-  return data.map((c) => ({ id: c.id, name: c.name, nameEn: c.nameen, slug: c.slug, icon: c.icon, subcategories: [] })) as Category[]
+  return data.map((c) => ({ id: c.id, name: c.name, nameEn: c.nameen, slug: c.slug, icon: c.icon, image: c.image ?? undefined, subcategories: [] })) as Category[]
 }
 
 export async function fetchCategoryById(id: string): Promise<Category | null> {
   const { data, error } = await supabase
     .from("categories")
-    .select("id, name, nameen, slug, icon")
+    .select("id, name, nameen, slug, icon, image")
     .eq("id", id)
     .single()
     .returns<any>()
@@ -218,7 +218,7 @@ export async function fetchCategoryById(id: string): Promise<Category | null> {
     throw error
   }
   if (!data) return null
-  return { id: data.id, name: data.name, nameEn: data.nameen, slug: data.slug, icon: data.icon, subcategories: [] } as Category
+  return { id: data.id, name: data.name, nameEn: data.nameen, slug: data.slug, icon: data.icon, image: data.image ?? undefined, subcategories: [] } as Category
 }
 
 // ---- Admin helpers (CRUD) ----
@@ -314,17 +314,18 @@ export interface CreateCategoryInput {
   nameEn: string
   slug: string
   icon?: string
+  image?: string
   parentId?: string | null
 }
 
 export async function fetchCategoriesAdmin(): Promise<Category[]> {
   const { data, error } = await supabase
     .from("categories")
-    .select("id, name, nameen, slug, icon")
+    .select("id, name, nameen, slug, icon, image")
     .order("name", { ascending: true })
     .returns<any[]>()
   if (error || !data) throw error ?? new Error("Failed to fetch categories")
-  return data.map((c) => ({ id: c.id, name: c.name, nameEn: c.nameen, slug: c.slug, icon: c.icon, subcategories: [] })) as Category[]
+  return data.map((c) => ({ id: c.id, name: c.name, nameEn: c.nameen, slug: c.slug, icon: c.icon, image: c.image ?? undefined, subcategories: [] })) as Category[]
 }
 
 export async function createCategory(input: CreateCategoryInput): Promise<string> {
@@ -335,6 +336,7 @@ export async function createCategory(input: CreateCategoryInput): Promise<string
       nameen: input.nameEn,
       slug: input.slug,
       icon: input.icon ?? null,
+      image: input.image ?? null,
       parent_id: input.parentId ?? null,
     })
     .select("id")
@@ -355,6 +357,7 @@ export async function updateCategory(input: UpdateCategoryInput): Promise<void> 
   if (typeof input.nameEn !== "undefined") updates.nameen = input.nameEn
   if (typeof input.slug !== "undefined") updates.slug = input.slug
   if (typeof input.icon !== "undefined") updates.icon = input.icon ?? null
+  if (typeof input.image !== "undefined") (updates as any).image = input.image ?? null
   if (typeof input.parentId !== "undefined") updates.parent_id = input.parentId ?? null
   const { error } = await supabase.from("categories").update(updates).eq("id", input.id)
   if (error) throw error

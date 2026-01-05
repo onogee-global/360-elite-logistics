@@ -199,9 +199,20 @@ export default function HomePage() {
                   <Card className="relative overflow-hidden border-2 hover:border-primary transition-all duration-300 hover:shadow-xl hover:-translate-y-1 aspect-square">
                     <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="relative h-full flex flex-col items-center justify-center p-6 text-center">
-                      <div className="text-5xl md:text-6xl mb-4 transform group-hover:scale-110 transition-transform">
-                        {category.icon}
-                      </div>
+                      {category.image ? (
+                        <div className="relative h-20 w-20 md:h-24 md:w-24 mb-4 transform group-hover:scale-110 transition-transform">
+                          <Image
+                            src={category.image}
+                            alt={locale === "en" ? category.nameEn : category.name}
+                            fill
+                            className="object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <div className="text-5xl md:text-6xl mb-4 transform group-hover:scale-110 transition-transform">
+                          {category.icon}
+                        </div>
+                      )}
                       <p className="font-semibold text-base md:text-lg group-hover:text-primary transition-colors">
                         {locale === "sr" ? category.name : category.nameEn}
                       </p>

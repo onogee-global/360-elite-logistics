@@ -40,6 +40,7 @@ export interface Category {
   nameEn: string
   slug: string
   icon: string
+  image?: string
   subcategories: Subcategory[]
 }
 
