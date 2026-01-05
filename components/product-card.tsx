@@ -19,9 +19,10 @@ interface ProductCardProps {
   categoryName?: string;
   promoVariationId?: string;
   forceBaseDiscount?: boolean;
+  variationOffer?: boolean;
 }
 
-export function ProductCard({ product, categoryName, promoVariationId, forceBaseDiscount = false }: ProductCardProps) {
+export function ProductCard({ product, categoryName, promoVariationId, forceBaseDiscount = false, variationOffer = false }: ProductCardProps) {
   const addItem = useCartStore((state) => state.addItem);
   const { toast } = useToast();
   const { locale, t } = useLocale();

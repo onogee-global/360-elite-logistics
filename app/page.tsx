@@ -40,18 +40,26 @@ export default function HomePage() {
     };
   }, []);
 
-  // Special offers: show ONLY products with a product-level discount and a valid base price
+  // Special offers: list base discounted products and discounted variations; order by highest discount
   const featuredOffers = useMemo(() => {
-    return products
-      .filter(
-        (p) =>
-          typeof p.discount === "number" &&
-          p.discount > 0 &&
-          typeof p.price === "number" &&
-          p.price > 0,
-      )
-      .slice(0, 8)
-      .map((p) => ({ product: p }));
+    type Entry = { product: Product; promoVariationId?: string; isVariation: boolean; discountPct: number };
+    const list: Entry[] = [];
+    for (const p of products) {
+      // base product discount with valid base price
+      if (typeof p.discount === "number" && p.discount > 0 && typeof p.price === "number" && p.price > 0) {
+        list.push({ product: p, isVariation: false, discountPct: p.discount });
+      }
+      // discounted variations
+      const vars = Array.isArray(p.variations) ? p.variations : [];
+      for (const v of vars) {
+        const vd = (v as any)?.discount as number | undefined;
+        if (typeof vd === "number" && vd > 0) {
+          list.push({ product: p, promoVariationId: v.id, isVariation: true, discountPct: vd });
+        }
+      }
+    }
+    list.sort((a, b) => b.discountPct - a.discountPct);
+    return list.slice(0, 12);
   }, [products]);
 
   return (
@@ -246,7 +254,7 @@ export default function HomePage() {
             </Button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {featuredOffers.map(({ product }) => {
+            {featuredOffers.map(({ product, promoVariationId, isVariation }) => {
               const cat = categories.find((c) => c.id === product.categoryId);
               const catName = cat
                 ? locale === "en"
@@ -255,10 +263,11 @@ export default function HomePage() {
                 : undefined;
               return (
                 <ProductCard
-                  key={`${product.id}-base`}
+                  key={`${product.id}-${promoVariationId ?? "base"}`}
                   product={product}
                   categoryName={catName}
-                  forceBaseDiscount
+                  promoVariationId={promoVariationId}
+                  forceBaseDiscount={!isVariation}
                 />
               );
             })}
