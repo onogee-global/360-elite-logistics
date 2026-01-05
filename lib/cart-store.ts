@@ -50,10 +50,16 @@ export const useCartStore = create<CartStore>()(
         return get().items.reduce((total, item) => {
           const isBaseItem = item.variation.id.startsWith("base-")
           const basePrice = item.variation.price
-          // Apply product-level discount only to base option lines
+          const variationDiscount =
+            !isBaseItem && typeof (item.variation as any)?.discount === "number"
+              ? ((item.variation as any).discount as number)
+              : 0
+          // Apply discount: product-level for base option; variation-level for variations
           const effectiveUnitPrice =
             isBaseItem && typeof item.product.discount === "number"
-              ? basePrice * (1 - item.product.discount / 100)
+              ? basePrice * (1 - (item.product.discount as number) / 100)
+              : variationDiscount > 0
+              ? basePrice * (1 - variationDiscount / 100)
               : basePrice
           return total + effectiveUnitPrice * item.quantity
         }, 0)

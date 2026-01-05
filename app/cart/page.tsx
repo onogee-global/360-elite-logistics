@@ -113,10 +113,16 @@ export default function CartPage() {
                   {items.map((item) => {
                     const isBaseItem = item.variation.id.startsWith("base-");
                     const basePrice = item.variation.price;
-                    // Apply product-level discount only to base option lines
+                    const variationDiscount =
+                      !isBaseItem && typeof (item.variation as any)?.discount === "number"
+                        ? ((item.variation as any).discount as number)
+                        : 0;
+                    // Apply discount: product-level for base option, variation-level for variations
                     const finalPrice =
                       isBaseItem && item.product.discount
-                        ? basePrice * (1 - item.product.discount / 100)
+                        ? basePrice * (1 - (item.product.discount ?? 0) / 100)
+                        : variationDiscount > 0
+                        ? basePrice * (1 - variationDiscount / 100)
                         : basePrice;
                     const productName =
                       locale === "sr" ? item.product.name : item.product.nameEn;
@@ -222,11 +228,11 @@ export default function CartPage() {
                             <div className="font-bold text-xl mb-1">
                               {(finalPrice * item.quantity).toFixed(2)} RSD
                             </div>
-                            {isBaseItem && item.product.discount && (
+                            {(isBaseItem && item.product.discount) || (!isBaseItem && variationDiscount > 0) ? (
                               <div className="text-sm text-muted-foreground line-through mb-2">
                                 {(basePrice * item.quantity).toFixed(2)} RSD
                               </div>
-                            )}
+                            ) : null}
                             <div className="text-xs text-muted-foreground">
                               {finalPrice.toFixed(2)} RSD / {t("quantity")}
                             </div>

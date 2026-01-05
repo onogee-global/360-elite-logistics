@@ -33,6 +33,20 @@ export function ProductCard({ product, categoryName, promoVariationId, forceBase
     let variationToAdd: ProductVariation | undefined;
     if (promoVariationId) {
       variationToAdd = variations.find((v) => v.id === promoVariationId) as ProductVariation | undefined;
+    } else if (forceBaseDiscount) {
+      // Explicitly treat this card as base product entry
+      variationToAdd = {
+        id: `base-${product.id}`,
+        productId: product.id,
+        name: locale === "sr" ? product.name : product.nameEn,
+        nameEn: product.nameEn,
+        price: product.price ?? 0,
+        unit: product.unit ?? "",
+        unitEn: product.unitEn ?? "",
+        inStock: product.inStock ?? true,
+        imageUrl: product.image,
+        isActive: true,
+      } as ProductVariation;
     } else if (variations.length === 1) {
       variationToAdd = variations[0] as ProductVariation;
     } else {
@@ -52,9 +66,13 @@ export function ProductCard({ product, categoryName, promoVariationId, forceBase
     }
     if (!variationToAdd) return;
     addItem(product, variationToAdd);
+    const addedName =
+      variationToAdd && !variationToAdd.id.startsWith("base-")
+        ? (locale === "sr" ? variationToAdd.name : variationToAdd.nameEn)
+        : (locale === "sr" ? product.name : product.nameEn);
     toast({
       title: t("product.addedToCart"),
-      description: `${locale === "sr" ? product.name : product.nameEn} ${t(
+      description: `${addedName} ${t(
         "product.addedMessage"
       )}`,
     });

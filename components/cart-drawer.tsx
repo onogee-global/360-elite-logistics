@@ -16,12 +16,17 @@ import { useCartStore } from "@/lib/cart-store";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLocale } from "@/lib/locale-context";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
 export function CartDrawer() {
   const { items, updateQuantity, removeItem, getTotal, getItemCount } =
     useCartStore();
   const { locale, t } = useLocale();
+  const { dismiss } = useToast();
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [open, setOpen] = useState(false);
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -29,7 +34,16 @@ export function CartDrawer() {
   const total = getTotal();
 
   return (
-    <Sheet>
+    <Sheet
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) {
+          // hide any active toast when cart is opened
+          dismiss();
+        }
+      }}
+    >
       <SheetTrigger asChild>
         <Button
           variant="ghost"
@@ -87,10 +101,16 @@ export function CartDrawer() {
                 {items.map((item, index) => {
                   const isBaseItem = item.variation.id.startsWith("base-");
                   const basePrice = item.variation.price;
-                  // Apply product-level discount only to base option lines
+                  const variationDiscount =
+                    !isBaseItem && typeof (item.variation as any)?.discount === "number"
+                      ? ((item.variation as any).discount as number)
+                      : 0;
+                  // Apply discount: product-level for base option, variation-level for variations
                   const finalPrice =
                     isBaseItem && item.product.discount
-                      ? basePrice * (1 - item.product.discount / 100)
+                      ? basePrice * (1 - (item.product.discount ?? 0) / 100)
+                      : variationDiscount > 0
+                      ? basePrice * (1 - variationDiscount / 100)
                       : basePrice;
                   const productName =
                     locale === "sr" ? item.product.name : item.product.nameEn;
@@ -130,11 +150,11 @@ export function CartDrawer() {
                           fill
                           className="object-contain p-2"
                         />
-                        {isBaseItem && item.product.discount && (
+                        {(isBaseItem && item.product.discount) || (!isBaseItem && variationDiscount > 0) ? (
                           <div className="absolute top-1 right-1 bg-destructive text-destructive-foreground text-xs font-bold px-1.5 py-0.5 rounded">
-                            -{item.product.discount}%
+                            -{isBaseItem ? item.product.discount : variationDiscount}%
                           </div>
-                        )}
+                        ) : null}
                       </div>
 
                       <div className="flex-1 min-w-0 flex flex-col justify-between">
@@ -195,11 +215,11 @@ export function CartDrawer() {
                         <div className="font-bold text-base text-primary">
                           {(finalPrice * item.quantity).toFixed(2)} RSD
                         </div>
-                        {isBaseItem && item.product.discount && (
+                        {(isBaseItem && item.product.discount) || (!isBaseItem && variationDiscount > 0) ? (
                           <div className="text-xs text-muted-foreground line-through">
                             {(basePrice * item.quantity).toFixed(2)} RSD
                           </div>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   );
@@ -227,9 +247,12 @@ export function CartDrawer() {
               <Button
                 size="lg"
                 className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all bg-gradient-to-r from-primary to-accent hover:opacity-90"
-                asChild
+                onClick={() => {
+                  setOpen(false);
+                  router.push("/cart");
+                }}
               >
-                <Link href="/cart">{t("cart.viewCart")}</Link>
+                {t("cart.viewCart")}
               </Button>
             </div>
           </>
