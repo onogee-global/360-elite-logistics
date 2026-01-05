@@ -47,10 +47,13 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
   const selectedPrice = selectedIsProductBase
     ? product.price ?? 0
     : selectedVariation?.price ?? 0;
-  // Apply product-level discount only to the base option
+  // Apply discount: product-level for base, variation-level for variation
+  const selectedDiscountPct = selectedIsProductBase
+    ? product.discount ?? 0
+    : selectedVariation?.discount ?? 0;
   const effectivePrice =
-    selectedIsProductBase && product.discount
-      ? selectedPrice * (1 - product.discount / 100)
+    selectedDiscountPct && selectedDiscountPct > 0
+      ? selectedPrice * (1 - selectedDiscountPct / 100)
       : selectedPrice;
   const selectedImage = selectedIsProductBase
     ? product.image || "/placeholder.svg"
@@ -131,9 +134,9 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
       {/* Product Image */}
       <div className="grid md:grid-cols-2 gap-6 md:gap-8">
         <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
-          {selectedIsProductBase && product.discount && (
+          {selectedDiscountPct && selectedDiscountPct > 0 && (
             <Badge className="absolute top-3 right-3 md:top-4 md:right-4 z-10 bg-destructive text-destructive-foreground text-base md:text-lg px-2 py-1 md:px-3">
-              -{product.discount}%
+              -{selectedDiscountPct}%
             </Badge>
           )}
           <Image
@@ -245,7 +248,7 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
           {/* Price (right-aligned, emphasized) */}
           <div className="text-right">
             <div className="flex justify-end items-baseline gap-3">
-              {selectedIsProductBase && product.discount ? (
+              {selectedDiscountPct && selectedDiscountPct > 0 ? (
                 <>
                   <span className="text-4xl md:text-5xl font-bold">
                     {effectivePrice.toFixed(2)} RSD

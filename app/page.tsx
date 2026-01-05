@@ -40,23 +40,12 @@ export default function HomePage() {
     };
   }, []);
 
-  // Special offers entries: one per discounted product (base) and one per discounted variation
+  // Special offers: show ONLY products with a product-level discount
   const featuredOffers = useMemo(() => {
-    const items: Array<{ product: Product; promoVariationId?: string }> = [];
-    for (const p of products) {
-      if (typeof p.discount === "number" && p.discount > 0) {
-        items.push({ product: p });
-      }
-      if (Array.isArray(p.variations)) {
-        for (const v of p.variations) {
-          const vd = (v as any)?.discount as number | undefined;
-          if (typeof vd === "number" && vd > 0) {
-            items.push({ product: p, promoVariationId: v.id });
-          }
-        }
-      }
-    }
-    return items.slice(0, 8);
+    return products
+      .filter((p) => typeof p.discount === "number" && p.discount > 0)
+      .slice(0, 8)
+      .map((p) => ({ product: p }));
   }, [products]);
 
   return (

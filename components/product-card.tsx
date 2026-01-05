@@ -18,9 +18,10 @@ interface ProductCardProps {
   product: Product;
   categoryName?: string;
   promoVariationId?: string;
+  forceBaseDiscount?: boolean;
 }
 
-export function ProductCard({ product, categoryName, promoVariationId }: ProductCardProps) {
+export function ProductCard({ product, categoryName, promoVariationId, forceBaseDiscount = false }: ProductCardProps) {
   const addItem = useCartStore((state) => state.addItem);
   const { toast } = useToast();
   const { locale, t } = useLocale();
@@ -69,7 +70,16 @@ export function ProductCard({ product, categoryName, promoVariationId }: Product
   let priceNow: number = displayBasePrice ?? 0;
   let priceOriginal: number | undefined = undefined;
   let promoVar: ProductVariation | undefined = undefined;
-  if (promoVariationId) {
+  if (forceBaseDiscount) {
+    if (typeof product.discount === "number" && product.discount > 0 && basePrice > 0) {
+      priceNow = basePrice * (1 - product.discount / 100);
+      priceOriginal = basePrice;
+    } else {
+      priceNow = basePrice;
+      priceOriginal = undefined;
+    }
+    promoVar = undefined;
+  } else if (promoVariationId) {
     const v = variationsArr.find((vv) => vv.id === promoVariationId);
     const vd = (v as any)?.discount as number | undefined;
     if (v && typeof vd === "number" && vd > 0) {
@@ -109,8 +119,8 @@ export function ProductCard({ product, categoryName, promoVariationId }: Product
   const productName = locale === "sr" ? product.name : product.nameEn;
   const productUnit = locale === "sr" ? product.unit : product.unitEn;
   const displayName =
-    promoVar ? (locale === "sr" ? promoVar.name : promoVar.nameEn) : productName;
-  const displayUnit = promoVar ? promoVar.unit : productUnit;
+    promoVar && !forceBaseDiscount ? (locale === "sr" ? promoVar.name : promoVar.nameEn) : productName;
+  const displayUnit = promoVar && !forceBaseDiscount ? promoVar.unit : productUnit;
 
   // categoryName is provided by callers that know the category list
 
@@ -131,7 +141,7 @@ export function ProductCard({ product, categoryName, promoVariationId }: Product
       <Link href={`/products/${product.id}`}>
         <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-muted/50 to-muted">
           <Image
-            src={(promoVar?.imageUrl || product.image || "/placeholder.svg") as string}
+            src={((promoVar && !forceBaseDiscount ? promoVar.imageUrl : product.image) || "/placeholder.svg") as string}
             alt={displayName}
             fill
             className="object-contain p-4 group-hover:scale-110 transition-transform duration-500"
