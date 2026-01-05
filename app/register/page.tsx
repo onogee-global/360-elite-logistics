@@ -19,7 +19,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { UserPlus, Mail, Lock, User } from "lucide-react";
-import { getCurrentUser, signUpWithEmailPassword } from "../../lib/auth";
+import { getCurrentUser } from "../../lib/auth";
+import { supabase } from "@/lib/supabase";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -78,10 +79,19 @@ export default function RegisterPage() {
 
     setIsLoading(true);
     try {
-      await signUpWithEmailPassword(formData.email, formData.password);
+      // Store company name as metadata during signup (contact person captured later)
+      const { error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: { company: formData.name },
+          emailRedirectTo: undefined,
+        },
+      });
+      if (error) throw error;
       toast({
         title: "Uspešna registracija",
-        description: "Proverite email za potvrdu naloga.",
+        description: "Registracija uspešna.",
       });
       const redirect = searchParams.get("redirect");
       router.push(redirect || "/account");
@@ -111,14 +121,14 @@ export default function RegisterPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Ime i prezime</Label>
+              <Label htmlFor="name">Kompanija</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="name"
                   name="name"
                   type="text"
-                  placeholder="Petar Petrović"
+                  placeholder="Naziv kompanije"
                   className="pl-10"
                   value={formData.name}
                   onChange={handleInputChange}

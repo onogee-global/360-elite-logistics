@@ -10,6 +10,53 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
 })
 
 // Helpers return app-level types for consistency with UI
+// ---- User profile helpers ----
+export interface UserProfile {
+  userId: string
+  companyName: string
+  pib: string
+  address: string
+  city: string
+  phone: string
+  contactName: string
+}
+
+export async function getUserProfile(userId: string): Promise<UserProfile | null> {
+  const { data, error } = await supabase
+    .from("user_profiles")
+    .select("user_id, company_name, pib, address, city, phone, contact_name")
+    .eq("user_id", userId)
+    .single()
+    .returns<any>()
+  if (error && error.code !== "PGRST116") {
+    throw error
+  }
+  if (!data) return null
+  return {
+    userId: data.user_id,
+    companyName: data.company_name ?? "",
+    pib: data.pib ?? "",
+    address: data.address ?? "",
+    city: data.city ?? "",
+    phone: data.phone ?? "",
+    contactName: data.contact_name ?? "",
+  }
+}
+
+export async function upsertUserProfile(profile: UserProfile): Promise<void> {
+  const payload = {
+    user_id: profile.userId,
+    company_name: profile.companyName || null,
+    pib: profile.pib || null,
+    address: profile.address || null,
+    city: profile.city || null,
+    phone: profile.phone || null,
+    contact_name: profile.contactName || null,
+  }
+  const { error } = await supabase.from("user_profiles").upsert(payload, { onConflict: "user_id" })
+  if (error) throw error
+}
+
 export async function fetchProductsPublic(): Promise<Product[]> {
   const { data, error } = await supabase
     .from("products")
@@ -471,7 +518,7 @@ export async function createOrder(input: CreateOrderInput): Promise<{ orderId: s
   const itemsPayload = input.items.map((it) => ({
     order_id: orderId,
     product_id: it.productId,
-    variation_id: it.variationId,
+    variation_id: it.variationId && !String(it.variationId).startsWith("base-") ? it.variationId : null,
     quantity: it.quantity,
     unit_price: it.unitPrice,
     name: it.name,
@@ -493,12 +540,13 @@ export interface OrderSummary {
   total: number
   status: string
   itemsCount: number
+  orderNumber?: number
 }
 
 export async function fetchOrdersForUser(userId: string): Promise<OrderSummary[]> {
   const { data: orders, error: ordersError } = await supabase
     .from("orders")
-    .select("id, created_at, total, status")
+    .select("id, created_at, total, status, order_number")
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .returns<any[]>()
@@ -532,6 +580,7 @@ export async function fetchOrdersForUser(userId: string): Promise<OrderSummary[]
     total: o.total,
     status: o.status,
     itemsCount: countByOrderId.get(o.id) ?? 0,
+    orderNumber: typeof o.order_number === "number" ? o.order_number : undefined,
   }))
 }
 
@@ -542,6 +591,8 @@ export interface OrderItemDetail {
   quantity: number
   unitPrice: number
   image: string | null
+  productId?: string | null
+  variationId?: string | null
 }
 
 export interface OrderDetail {
@@ -549,12 +600,13 @@ export interface OrderDetail {
   createdAt: string
   total: number
   items: OrderItemDetail[]
+  orderNumber?: number
 }
 
 export async function fetchOrderDetail(orderId: string): Promise<OrderDetail | null> {
   const { data: order, error: orderErr } = await supabase
     .from("orders")
-    .select("id, created_at, total")
+    .select("id, created_at, total, order_number")
     .eq("id", orderId)
     .single()
     .returns<any>()
@@ -565,7 +617,7 @@ export async function fetchOrderDetail(orderId: string): Promise<OrderDetail | n
   try {
     const { data: items, error: itemsErr } = await supabase
       .from("order_items")
-      .select("name, variation_name, quantity, unit_price, image")
+      .select("name, variation_name, quantity, unit_price, image, product_id, variation_id")
       .eq("order_id", orderId)
       .order("id", { ascending: true })
       .returns<any[]>()
@@ -576,6 +628,9 @@ export async function fetchOrderDetail(orderId: string): Promise<OrderDetail | n
       quantity: it.quantity ?? 0,
       unitPrice: it.unit_price ?? 0,
       image: it.image ?? null,
+      // keep IDs for potential client actions (e.g., repeat order)
+      productId: it.product_id ?? null,
+      variationId: it.variation_id ?? null,
     }))
   } catch (_e: any) {
     // Fallback path: query without image column and compute images from products/variations
@@ -623,6 +678,8 @@ export async function fetchOrderDetail(orderId: string): Promise<OrderDetail | n
       unitPrice: it.unit_price ?? 0,
       image:
         (it.variation_id ? varMap.get(it.variation_id) : prodMap.get(it.product_id)) ?? null,
+      productId: it.product_id ?? null,
+      variationId: it.variation_id ?? null,
     }))
   }
 
@@ -631,6 +688,7 @@ export async function fetchOrderDetail(orderId: string): Promise<OrderDetail | n
     createdAt: order.created_at,
     total: order.total,
     items: mapped,
+    orderNumber: typeof order.order_number === "number" ? order.order_number : undefined,
   }
 }
 

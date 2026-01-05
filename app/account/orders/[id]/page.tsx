@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import { useCartStore } from "@/lib/cart-store";
 
 export default function OrderDetailPage({
   params,
@@ -17,6 +18,7 @@ export default function OrderDetailPage({
   const [authChecked, setAuthChecked] = useState(false);
   const [order, setOrder] = useState<any>(null);
   const { id } = usePromise(params);
+  const addItem = useCartStore((s) => s.addItem);
 
   useEffect(() => {
     let cancelled = false;
@@ -40,6 +42,49 @@ export default function OrderDetailPage({
     };
   }, [id, router]);
 
+  const handleRepeatOrder = async () => {
+    if (!order) return;
+    const { fetchProductById } = await import("@/lib/supabase");
+    let added = 0;
+    for (const it of order.items as Array<any>) {
+      try {
+        const productId: string | null = it.productId ?? null;
+        const variationId: string | null = it.variationId ?? null;
+        if (!productId) continue;
+        const product = await fetchProductById(productId);
+        if (!product) continue;
+        // Find or synthesize variation
+        let variation: any = null;
+        if (variationId && !String(variationId).startsWith("base-")) {
+          variation = (product.variations ?? []).find((v) => v.id === variationId) ?? null;
+        } else {
+          variation = {
+            id: `base-${product.id}`,
+            productId: product.id,
+            name: product.name,
+            nameEn: product.nameEn,
+            price: product.price ?? 0,
+            unit: product.unit ?? "",
+            unitEn: product.unitEn ?? "",
+            inStock: product.inStock ?? true,
+            imageUrl: product.image,
+            isActive: true,
+          };
+        }
+        if (!variation || (variation.price ?? 0) <= 0) continue;
+        const qty = Math.max(1, Number(it.quantity ?? 1));
+        for (let i = 0; i < qty; i++) {
+          addItem(product as any, variation as any);
+        }
+        added += qty;
+      } catch {
+        // skip on error
+      }
+    }
+    // Navigate to cart
+    router.push("/cart");
+  };
+
   if (!authChecked) return null;
   if (!order) {
     return (
@@ -62,11 +107,18 @@ export default function OrderDetailPage({
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl md:text-3xl font-bold">
-          Porudžbina #{order.id}
+          {typeof order.orderNumber === "number"
+            ? `Porudžbina ${order.orderNumber}.`
+            : `Porudžbina #${order.id}`}
         </h1>
-        <Button asChild variant="outline">
-          <Link href="/account">Nazad</Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleRepeatOrder}>
+            Ponovi porudžbinu
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/account">Nazad</Link>
+          </Button>
+        </div>
       </div>
       <Card>
         <CardHeader>

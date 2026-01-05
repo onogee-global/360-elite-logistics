@@ -242,28 +242,23 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
             </div>
           </div>
 
-          {/* Price */}
-          <div>
-            <p className="text-xs md:text-sm text-muted-foreground mb-2">
-              Cena
-            </p>
-            <div className="flex items-baseline gap-2 md:gap-3">
-              <>
-                {selectedIsProductBase && product.discount ? (
-                  <>
-                    <span className="text-3xl md:text-4xl font-bold">
-                      {effectivePrice.toFixed(2)} RSD
-                    </span>
-                    <span className="text-lg md:text-xl text-muted-foreground line-through">
-                      {selectedPrice.toFixed(2)} RSD
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-3xl md:text-4xl font-bold">
+          {/* Price (right-aligned, emphasized) */}
+          <div className="text-right">
+            <div className="flex justify-end items-baseline gap-3">
+              {selectedIsProductBase && product.discount ? (
+                <>
+                  <span className="text-4xl md:text-5xl font-bold">
+                    {effectivePrice.toFixed(2)} RSD
+                  </span>
+                  <span className="text-base md:text-xl text-muted-foreground line-through">
                     {selectedPrice.toFixed(2)} RSD
                   </span>
-                )}
-              </>
+                </>
+              ) : (
+                <span className="text-4xl md:text-5xl font-bold">
+                  {selectedPrice.toFixed(2)} RSD
+                </span>
+              )}
             </div>
             {selectedUnit && (
               <p className="text-xs md:text-sm text-muted-foreground mt-1">

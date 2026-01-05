@@ -12,7 +12,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { useCartStore } from "@/lib/cart-store";
 import { useToast } from "@/hooks/use-toast";
-import { CreditCard, Banknote, Package, MapPin } from "lucide-react";
+import { Package, MapPin } from "lucide-react";
 import Image from "next/image";
 import { useLocale } from "@/lib/locale-context";
 import { supabase } from "@/lib/supabase";
@@ -31,7 +31,6 @@ export default function CheckoutPage() {
     address: "",
     city: "",
     zip: "",
-    paymentMethod: "card" as "card" | "cash",
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -68,7 +67,6 @@ export default function CheckoutPage() {
             (meta.postal_code as string) ??
             (meta.postalCode as string) ??
             prev.zip,
-          paymentMethod: "cash",
         }));
         setAuthChecked(true);
       }
@@ -294,28 +292,7 @@ export default function CheckoutPage() {
               </CardContent>
             </Card>
 
-            {/* Payment Method */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
-                  <CreditCard className="h-4 w-4 md:h-5 md:w-5" />
-                  Način plaćanja
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center space-x-3 border rounded-lg p-3 md:p-4">
-                  <Banknote className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
-                  <div>
-                    <div className="font-medium text-sm md:text-base">
-                      Gotovina
-                    </div>
-                    <div className="text-xs md:text-sm text-muted-foreground">
-                      Plaćanje gotovinom pri dostavi
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Payment method removed per requirements; default is cash on delivery */}
           </div>
 
           {/* Order Summary */}

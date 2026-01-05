@@ -17,24 +17,14 @@ import { useToast } from "@/hooks/use-toast";
 import { User, Package, MapPin, Settings } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { fetchOrdersForUser, type OrderSummary } from "@/lib/supabase";
+import { fetchOrdersForUser, type OrderSummary, getUserProfile, upsertUserProfile, type UserProfile } from "@/lib/supabase";
 
 export default function AccountPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const [authChecked, setAuthChecked] = useState(false);
-  const [profileData, setProfileData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-  });
-  const [addressData, setAddressData] = useState({
-    street: "",
-    city: "",
-    zip: "",
-    country: "",
-  });
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [activeTab, setActiveTab] = useState<"account" | "orders">("account");
 
@@ -48,18 +38,31 @@ export default function AccountPage() {
         router.replace(`/login?redirect=${encodeURIComponent("/account")}`);
         return;
       }
-      const meta = (u as any)?.user_metadata ?? {};
-      setProfileData({
-        name: meta.name || meta.full_name || u.email?.split("@")[0] || "",
-        email: u.email || "",
-        phone: meta.phone || "",
-      });
-      setAddressData({
-        street: meta.street || "",
-        city: meta.city || "",
-        zip: meta.zip || "",
-        country: meta.country || "",
-      });
+      // Load profile from user_profiles (upsert later if missing)
+      try {
+        const p = await getUserProfile(u.id);
+        setProfile(
+          p ?? {
+            userId: u.id,
+            companyName: "",
+            pib: "",
+            address: "",
+            city: "",
+            phone: "",
+            contactName: "",
+          },
+        );
+      } catch {
+        setProfile({
+          userId: u.id,
+          companyName: "",
+          pib: "",
+          address: "",
+          city: "",
+          phone: "",
+          contactName: "",
+        });
+      }
       // Load orders
       try {
         const list = await fetchOrdersForUser(u.id);
@@ -100,20 +103,11 @@ export default function AccountPage() {
         router.replace(`/login?redirect=${encodeURIComponent("/account")}`);
         return;
       }
-      const { error } = await supabase.auth.updateUser({
-        data: {
-          name: profileData.name,
-          phone: profileData.phone,
-          street: addressData.street,
-          city: addressData.city,
-          zip: addressData.zip,
-          country: addressData.country,
-        },
-      });
-      if (error) throw error;
+      if (!profile) return;
+      await upsertUserProfile(profile);
       toast({
         title: "Podaci sačuvani",
-        description: "Vaš profil i adresa su uspešno sačuvani",
+        description: "Profil je uspešno sačuvan",
       });
     } catch (err: any) {
       toast({
@@ -175,116 +169,69 @@ export default function AccountPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings className="h-5 w-5" />
-                Lični podaci
+                Podaci o kompaniji
               </CardTitle>
               <CardDescription>
-                Ažurirajte vaše lične informacije
+                Popunite podatke za dostavu i kontakt
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="profile-name">Ime i prezime</Label>
+                <Label htmlFor="company">Kompanija</Label>
                 <Input
-                  id="profile-name"
-                  value={profileData.name}
-                  onChange={(e) =>
-                    setProfileData((prev) => ({
-                      ...prev,
-                      name: e.target.value,
-                    }))
-                  }
+                  id="company"
+                  value={profile?.companyName ?? ""}
+                  onChange={(e) => setProfile((p) => (p ? { ...p, companyName: e.target.value } : p))}
+                  placeholder="Naziv kompanije"
                 />
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="profile-email">Email adresa</Label>
+                <Label htmlFor="pib">PIB</Label>
                 <Input
-                  id="profile-email"
-                  type="email"
-                  value={profileData.email}
-                  onChange={(e) =>
-                    setProfileData((prev) => ({
-                      ...prev,
-                      email: e.target.value,
-                    }))
-                  }
+                  id="pib"
+                  value={profile?.pib ?? ""}
+                  onChange={(e) => setProfile((p) => (p ? { ...p, pib: e.target.value } : p))}
+                  placeholder="123456789"
                 />
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="profile-phone">Telefon</Label>
-                <Input
-                  id="profile-phone"
-                  type="tel"
-                  value={profileData.phone}
-                  onChange={(e) =>
-                    setProfileData((prev) => ({
-                      ...prev,
-                      phone: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-
-              {/* single save button moved below address section */}
-
-              <div className="space-y-2">
-                <Label htmlFor="addr-street">Ulica i broj</Label>
+                <Label htmlFor="addr-street">Adresa</Label>
                 <Input
                   id="addr-street"
-                  value={addressData.street}
-                  onChange={(e) =>
-                    setAddressData((prev) => ({
-                      ...prev,
-                      street: e.target.value,
-                    }))
-                  }
+                  value={profile?.address ?? ""}
+                  onChange={(e) => setProfile((p) => (p ? { ...p, address: e.target.value } : p))}
                   placeholder="Kneza Miloša 10"
                 />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label htmlFor="addr-city">Grad</Label>
                   <Input
                     id="addr-city"
-                    value={addressData.city}
-                    onChange={(e) =>
-                      setAddressData((prev) => ({
-                        ...prev,
-                        city: e.target.value,
-                      }))
-                    }
+                    value={profile?.city ?? ""}
+                    onChange={(e) => setProfile((p) => (p ? { ...p, city: e.target.value } : p))}
                     placeholder="Beograd"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="addr-zip">Poštanski broj</Label>
+                  <Label htmlFor="phone">Kontakt telefon</Label>
                   <Input
-                    id="addr-zip"
-                    value={addressData.zip}
-                    onChange={(e) =>
-                      setAddressData((prev) => ({
-                        ...prev,
-                        zip: e.target.value,
-                      }))
-                    }
-                    placeholder="11000"
+                    id="phone"
+                    type="tel"
+                    value={profile?.phone ?? ""}
+                    onChange={(e) => setProfile((p) => (p ? { ...p, phone: e.target.value } : p))}
+                    placeholder="+381 60 123 4567"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="addr-country">Država</Label>
-                  <Input
-                    id="addr-country"
-                    value={addressData.country}
-                    onChange={(e) =>
-                      setAddressData((prev) => ({
-                        ...prev,
-                        country: e.target.value,
-                      }))
-                    }
-                    placeholder="Srbija"
-                  />
-                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="contact-name">Ime i prezime (kontakt)</Label>
+                <Input
+                  id="contact-name"
+                  value={profile?.contactName ?? ""}
+                  onChange={(e) => setProfile((p) => (p ? { ...p, contactName: e.target.value } : p))}
+                  placeholder="Petar Petrović"
+                />
               </div>
               <div className="pt-4">
                 <Button onClick={handleSaveAccount}>Sačuvaj</Button>
@@ -311,7 +258,11 @@ export default function AccountPage() {
                     <div key={order.id}>
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-semibold">#{order.id}</p>
+                          <p className="font-semibold">
+                            {typeof order.orderNumber === "number"
+                              ? `Porudžbina ${order.orderNumber}.`
+                              : `Porudžbina #${order.id}`}
+                          </p>
                           <p className="text-sm text-muted-foreground">
                             {new Date(order.createdAt).toLocaleString("sr-RS")}{" "}
                             • {order.itemsCount} proizvoda
