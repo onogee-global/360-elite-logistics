@@ -40,10 +40,16 @@ export default function HomePage() {
     };
   }, []);
 
-  // Special offers: show ONLY products with a product-level discount
+  // Special offers: show ONLY products with a product-level discount and a valid base price
   const featuredOffers = useMemo(() => {
     return products
-      .filter((p) => typeof p.discount === "number" && p.discount > 0)
+      .filter(
+        (p) =>
+          typeof p.discount === "number" &&
+          p.discount > 0 &&
+          typeof p.price === "number" &&
+          p.price > 0,
+      )
       .slice(0, 8)
       .map((p) => ({ product: p }));
   }, [products]);
@@ -240,7 +246,7 @@ export default function HomePage() {
             </Button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {featuredOffers.map(({ product, promoVariationId }) => {
+            {featuredOffers.map(({ product }) => {
               const cat = categories.find((c) => c.id === product.categoryId);
               const catName = cat
                 ? locale === "en"
@@ -249,10 +255,10 @@ export default function HomePage() {
                 : undefined;
               return (
                 <ProductCard
-                  key={`${product.id}-${promoVariationId ?? "base"}`}
+                  key={`${product.id}-base`}
                   product={product}
                   categoryName={catName}
-                  promoVariationId={promoVariationId}
+                  forceBaseDiscount
                 />
               );
             })}

@@ -97,6 +97,7 @@ export async function fetchProductsWithVariations(): Promise<Product[]> {
       image,
       categoryId,
       subcategoryId,
+      price,
       discount,
       product_variations:product_variations!product_variations_product_id_fkey (
         id,
@@ -132,6 +133,7 @@ export async function fetchProductsWithVariations(): Promise<Product[]> {
       image: row.image,
       categoryId: row.categoryId,
       subcategoryId: row.subcategoryId,
+      price: typeof row.price === "number" ? row.price : undefined,
       discount: row.discount ?? undefined,
       variations,
     }
