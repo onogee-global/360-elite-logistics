@@ -17,7 +17,7 @@ import {
 import { Filter } from "lucide-react";
 import { useLocale } from "@/lib/locale-context";
 import type { Product, Category } from "@/lib/types";
-import { fetchCategories, fetchProductsPublic } from "@/lib/supabase";
+import { fetchCategories, fetchProductsWithVariations } from "@/lib/supabase";
 
 export default function ProductsPage() {
   const searchParams = useSearchParams();
@@ -44,7 +44,7 @@ export default function ProductsPage() {
       try {
         const [cats, prods] = await Promise.all([
           fetchCategories(),
-          fetchProductsPublic(),
+          fetchProductsWithVariations(),
         ]);
         if (!cancelled) {
           setCategories(cats);
@@ -76,19 +76,8 @@ export default function ProductsPage() {
       );
     }
 
-    // Filter by discount
-    if (showDiscountOnly) {
-      filtered = filtered.filter((p) => {
-        const productHasDiscount =
-          typeof p.discount === "number" && p.discount > 0;
-        const anyVariationDiscount =
-          Array.isArray(p.variations) &&
-          p.variations.some(
-            (v: any) => typeof v?.discount === "number" && v.discount > 0
-          );
-        return productHasDiscount || anyVariationDiscount;
-      });
-    }
+    // When not in discount-only mode, we keep product-level filtering only.
+    // Discount-only listing is handled by discountedEntries below.
 
     // Sort
     filtered.sort((a, b) => {
@@ -129,10 +118,36 @@ export default function ProductsPage() {
     allProducts,
     categories,
     selectedCategories,
-    showDiscountOnly,
     sortBy,
     locale,
   ]);
+
+  // Discount-only entries: base discounted products and discounted variations, ordered by highest discount
+  const discountedEntries = useMemo(() => {
+    if (!showDiscountOnly) return [];
+    const entries: Array<{ product: Product; promoVariationId?: string; discountPct: number }> = [];
+    const slugById = new Map(categories.map((c) => [c.id, c.slug]));
+    const categoryFilterActive = selectedCategories.length > 0;
+    for (const p of allProducts) {
+      if (categoryFilterActive) {
+        const slug = slugById.get(p.categoryId) || "";
+        if (!selectedCategories.includes(slug)) continue;
+      }
+      if (typeof p.discount === "number" && p.discount > 0 && typeof p.price === "number" && p.price > 0) {
+        entries.push({ product: p, discountPct: p.discount });
+      }
+      if (Array.isArray(p.variations)) {
+        for (const v of p.variations) {
+          const vd = (v as any)?.discount as number | undefined;
+          if (typeof vd === "number" && vd > 0) {
+            entries.push({ product: p, promoVariationId: v.id, discountPct: vd });
+          }
+        }
+      }
+    }
+    entries.sort((a, b) => b.discountPct - a.discountPct);
+    return entries;
+  }, [showDiscountOnly, allProducts, categories, selectedCategories]);
 
   const toggleCategory = (categorySlug: string) => {
     setSelectedCategories((prev) =>
@@ -233,9 +248,12 @@ export default function ProductsPage() {
           {/* Sort and Results Count */}
           <div className="flex items-center justify-between mb-6">
             <p className="text-sm text-muted-foreground">
-              {t("showing")} {isLoading ? "…" : filteredProducts.length}{" "}
+              {t("showing")}{" "}
+              {isLoading ? "…" : showDiscountOnly ? discountedEntries.length : filteredProducts.length}{" "}
               {!isLoading &&
-                (filteredProducts.length === 1 ? t("product") : t("products"))}
+                ((showDiscountOnly ? discountedEntries.length : filteredProducts.length) === 1
+                  ? t("product")
+                  : t("products"))}
             </p>
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-[200px]">
@@ -256,23 +274,38 @@ export default function ProductsPage() {
                 <p className="text-muted-foreground">{t("loading")}</p>
               </CardContent>
             </Card>
-          ) : filteredProducts.length > 0 ? (
+          ) : (showDiscountOnly ? discountedEntries.length > 0 : filteredProducts.length > 0) ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredProducts.map((product) => {
-                const cat = categories.find((c) => c.id === product.categoryId);
-                const catName = cat
-                  ? locale === "en"
-                    ? cat.nameEn
-                    : cat.name
-                  : undefined;
-                return (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    categoryName={catName}
-                  />
-                );
-              })}
+              {showDiscountOnly
+                ? discountedEntries.map(({ product, promoVariationId, discountPct }) => {
+                    const cat = categories.find((c) => c.id === product.categoryId);
+                    const catName = cat ? (locale === "en" ? cat.nameEn : cat.name) : undefined;
+                    return (
+                      <ProductCard
+                        key={`${product.id}-${promoVariationId ?? "base"}`}
+                        product={product}
+                        categoryName={catName}
+                        promoVariationId={promoVariationId}
+                        forceBaseDiscount={!promoVariationId}
+                      />
+                    );
+                  })
+                : filteredProducts.map((product) => {
+                    const cat = categories.find((c) => c.id === product.categoryId);
+                    const catName = cat
+                      ? locale === "en"
+                        ? cat.nameEn
+                        : cat.name
+                      : undefined;
+                    return (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        categoryName={catName}
+                        forceBaseDiscount
+                      />
+                    );
+                  })}
             </div>
           ) : (
             <Card>
