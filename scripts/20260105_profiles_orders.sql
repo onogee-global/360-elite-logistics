@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS public.user_profiles (
   city text,
   phone text,
   contact_name text,
+  is_admin boolean DEFAULT false,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
@@ -50,6 +51,20 @@ CREATE POLICY user_profiles_self_update
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
+-- Add is_admin column if missing (idempotent)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'user_profiles'
+      AND column_name = 'is_admin'
+  ) THEN
+    ALTER TABLE public.user_profiles ADD COLUMN is_admin boolean DEFAULT false;
+  END IF;
+END $$;
+
 -- orders.order_number sequence and column
 CREATE SEQUENCE IF NOT EXISTS public.orders_order_number_seq START 1;
 
@@ -58,6 +73,7 @@ ALTER TABLE public.orders
 
 -- Switch to per-user numbering: drop global UNIQUE, add per-user UNIQUE, add trigger to assign next number per user
 ALTER TABLE public.orders DROP CONSTRAINT IF EXISTS orders_order_number_key;
+ALTER TABLE public.orders DROP CONSTRAINT IF EXISTS orders_user_ordernumber_key;
 ALTER TABLE public.orders ADD CONSTRAINT orders_user_ordernumber_key UNIQUE (user_id, order_number);
 
 -- Idempotent trigger to set per-user incremental order_number when NULL

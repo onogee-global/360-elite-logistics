@@ -19,12 +19,13 @@ export interface UserProfile {
   city: string
   phone: string
   contactName: string
+  isAdmin?: boolean
 }
 
 export async function getUserProfile(userId: string): Promise<UserProfile | null> {
   const { data, error } = await supabase
     .from("user_profiles")
-    .select("user_id, company_name, pib, address, city, phone, contact_name")
+    .select("user_id, company_name, pib, address, city, phone, contact_name, is_admin")
     .eq("user_id", userId)
     .single()
     .returns<any>()
@@ -40,6 +41,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
     city: data.city ?? "",
     phone: data.phone ?? "",
     contactName: data.contact_name ?? "",
+    isAdmin: !!data.is_admin,
   }
 }
 
@@ -52,6 +54,7 @@ export async function upsertUserProfile(profile: UserProfile): Promise<void> {
     city: profile.city || null,
     phone: profile.phone || null,
     contact_name: profile.contactName || null,
+    is_admin: typeof profile.isAdmin === "boolean" ? profile.isAdmin : undefined,
   }
   const { error } = await supabase.from("user_profiles").upsert(payload, { onConflict: "user_id" })
   if (error) throw error

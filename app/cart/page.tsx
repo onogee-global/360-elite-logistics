@@ -30,13 +30,17 @@ export default function CartPage() {
     discount: number;
   } | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
+  const [qtyInputs, setQtyInputs] = useState<Record<string, string>>({});
 
+  // Subtotal excludes VAT; PDV is added on the discounted amount
   const subtotal = getTotal();
   const promoDiscountAmount = appliedPromo
     ? subtotal * (appliedPromo.discount / 100)
     : 0;
+  const taxableAmount = Math.max(0, subtotal - promoDiscountAmount);
+  const pdv = taxableAmount * 0.2;
   const deliveryFee = subtotal > 0 ? (subtotal >= 5000 ? 0 : 800) : 0;
-  const total = subtotal - promoDiscountAmount + deliveryFee;
+  const total = taxableAmount + pdv + deliveryFee;
 
   if (items.length === 0) {
     return (
@@ -192,9 +196,33 @@ export default function CartPage() {
                                 >
                                   <Minus className="h-4 w-4" />
                                 </Button>
-                                <span className="w-12 text-center text-base font-bold">
-                                  {item.quantity}
-                                </span>
+                                <Input
+                                  type="number"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  min={1}
+                                  max={999}
+                                  value={qtyInputs[item.variation.id] ?? String(item.quantity)}
+                                  onChange={(e) => {
+                                    const val = e.target.value.replace(/\D+/g, "");
+                                    setQtyInputs((prev) => ({ ...prev, [item.variation.id]: val }));
+                                  }}
+                                  onBlur={() => {
+                                    const raw = qtyInputs[item.variation.id] ?? String(item.quantity);
+                                    const next = Math.min(999, Math.max(1, parseInt(raw || "1", 10)));
+                                    updateQuantity(item.variation.id, next);
+                                    setQtyInputs((prev) => ({ ...prev, [item.variation.id]: String(next) }));
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      const raw = qtyInputs[item.variation.id] ?? String(item.quantity);
+                                      const next = Math.min(999, Math.max(1, parseInt(raw || "1", 10)));
+                                      updateQuantity(item.variation.id, next);
+                                      setQtyInputs((prev) => ({ ...prev, [item.variation.id]: String(next) }));
+                                    }
+                                  }}
+                                  className="w-16 h-10 text-center text-base font-bold border-0 focus-visible:ring-0"
+                                />
                                 <Button
                                   variant="ghost"
                                   size="icon"
@@ -326,23 +354,23 @@ export default function CartPage() {
                 {/* Price Breakdown */}
                 <div className="space-y-4">
                   <div className="flex justify-between text-base">
-                    <span className="text-muted-foreground">
-                      {t("cart.allProducts")}
-                    </span>
-                    <span className="font-semibold">
-                      {subtotal.toFixed(2)} RSD
-                    </span>
+                    <span className="text-muted-foreground">{t("subtotal")}</span>
+                    <span className="font-semibold">{subtotal.toFixed(2)} RSD</span>
                   </div>
                   {appliedPromo && (
                     <div className="flex justify-between text-base">
                       <span className="text-muted-foreground">
-                        Promo ({appliedPromo.code})
+                        {t("cart.promo")} ({appliedPromo.code})
                       </span>
                       <span className="font-semibold text-green-700">
                         -{promoDiscountAmount.toFixed(2)} RSD
                       </span>
                     </div>
                   )}
+                  <div className="flex justify-between text-base">
+                    <span className="text-muted-foreground">{t("vat20")}</span>
+                    <span className="font-semibold">{pdv.toFixed(2)} RSD</span>
+                  </div>
                   <div className="flex justify-between text-base">
                     <span className="text-muted-foreground">
                       {t("cart.deliveryFee")}

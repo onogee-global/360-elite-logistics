@@ -38,9 +38,11 @@ export default function CheckoutPage() {
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
 
+  // Subtotal excludes VAT; PDV is added at 20%
   const subtotal = getTotal();
+  const pdv = subtotal * 0.2;
   const deliveryFee = subtotal >= 5000 ? 0 : 800;
-  const total = subtotal + deliveryFee;
+  const total = subtotal + pdv + deliveryFee;
 
   // Require authenticated user for checkout
   useEffect(() => {
@@ -156,10 +158,13 @@ export default function CheckoutPage() {
         };
       });
 
-      const total = orderItems.reduce(
+      const subtotalComputed = orderItems.reduce(
         (sum, it) => sum + it.unitPrice * it.quantity,
         0
       );
+      const pdvComputed = subtotalComputed * 0.2;
+      const deliveryComputed = subtotalComputed >= 5000 ? 0 : 800;
+      const totalWithVat = subtotalComputed + pdvComputed + deliveryComputed;
 
       const { orderId } = await createOrder({
         userId: user.id,
@@ -167,7 +172,8 @@ export default function CheckoutPage() {
         customerEmail: formData.email,
         customerPhone: normalizedPhone,
         note: undefined,
-        total: Number(total.toFixed(2)),
+        // Store order total WITH VAT snapshot
+        total: Number(totalWithVat.toFixed(2)),
         address: {
           street: formData.address,
           city: formData.city,
@@ -189,7 +195,7 @@ export default function CheckoutPage() {
             orderId,
             customerEmail: formData.email,
             customerPhone: normalizedPhone,
-            total,
+            total: totalWithVat,
             items: orderItems.map((it) => ({
               name: it.name,
               variationName: it.variationName,
@@ -404,10 +410,12 @@ export default function CheckoutPage() {
                 {/* Price Breakdown */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{t("cart.allProducts")}</span>
-                    <span className="font-medium">
-                      {subtotal.toFixed(2)} RSD
-                    </span>
+                    <span className="text-muted-foreground">{t("subtotal")}</span>
+                    <span className="font-medium">{subtotal.toFixed(2)} RSD</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">{t("vat20")}</span>
+                    <span className="font-medium">{pdv.toFixed(2)} RSD</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">{t("cart.delivery")}</span>

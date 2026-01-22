@@ -22,11 +22,13 @@ import { fetchCategories, fetchProductsWithVariations } from "@/lib/supabase";
 export default function ProductsPage() {
   const searchParams = useSearchParams();
   const categoryParam = searchParams.get("category");
+  const categoryIdParam = searchParams.get("categoryId");
   const discountParam = searchParams.get("discount");
   const { locale, t } = useLocale();
 
+  // We store selected category IDs (not slugs) for robustness
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
-    categoryParam ? [categoryParam] : []
+    categoryIdParam ? [categoryIdParam] : []
   );
   const [showDiscountOnly, setShowDiscountOnly] = useState(
     discountParam === "true"
@@ -65,15 +67,19 @@ export default function ProductsPage() {
     };
   }, []);
 
+  // Backward compatibility: support legacy ?category=<slug>
+  useEffect(() => {
+    if (!categoryParam || selectedCategories.length > 0 || categories.length === 0) return;
+    const match = categories.find((c) => c.slug === categoryParam);
+    if (match) setSelectedCategories([match.id]);
+  }, [categoryParam, categories, selectedCategories.length]);
+
   const filteredProducts = useMemo(() => {
     let filtered = [...allProducts];
 
     // Filter by category slug if possible
     if (selectedCategories.length > 0) {
-      const slugById = new Map(categories.map((c) => [c.id, c.slug]));
-      filtered = filtered.filter((p) =>
-        selectedCategories.includes(slugById.get(p.categoryId) || "")
-      );
+      filtered = filtered.filter((p) => selectedCategories.includes(p.categoryId));
     }
 
     // When not in discount-only mode, we keep product-level filtering only.
@@ -81,27 +87,28 @@ export default function ProductsPage() {
 
     // Sort
     filtered.sort((a, b) => {
+      // Consistent list price for sorting:
+      // - If base product price exists, use it
+      // - Otherwise use MIN variation price
+      // This keeps listing sorting aligned with what we display as the base option.
+      const listPrice = (p: Product) => {
+        if (typeof p.price === "number" && p.price > 0) return p.price;
+        const vars = Array.isArray(p.variations) ? p.variations : [];
+        if (vars.length > 0) {
+          const minVar = Math.min(...vars.map((v) => v.price));
+          return Number.isFinite(minVar) ? minVar : Number.POSITIVE_INFINITY;
+        }
+        return Number.POSITIVE_INFINITY;
+      };
       switch (sortBy) {
         case "price-asc": {
-          const aPrice = Math.min(
-            ...((a.variations ?? []).map((v) => v.price) || [
-              a.price ?? Number.MAX_SAFE_INTEGER,
-            ])
-          );
-          const bPrice = Math.min(
-            ...((b.variations ?? []).map((v) => v.price) || [
-              b.price ?? Number.MAX_SAFE_INTEGER,
-            ])
-          );
+          const aPrice = listPrice(a);
+          const bPrice = listPrice(b);
           return aPrice - bPrice;
         }
         case "price-desc": {
-          const aPrice = Math.min(
-            ...((a.variations ?? []).map((v) => v.price) || [a.price ?? 0])
-          );
-          const bPrice = Math.min(
-            ...((b.variations ?? []).map((v) => v.price) || [b.price ?? 0])
-          );
+          const aPrice = listPrice(a);
+          const bPrice = listPrice(b);
           return bPrice - aPrice;
         }
         case "name":
@@ -126,12 +133,10 @@ export default function ProductsPage() {
   const discountedEntries = useMemo(() => {
     if (!showDiscountOnly) return [];
     const entries: Array<{ product: Product; promoVariationId?: string; discountPct: number }> = [];
-    const slugById = new Map(categories.map((c) => [c.id, c.slug]));
     const categoryFilterActive = selectedCategories.length > 0;
     for (const p of allProducts) {
       if (categoryFilterActive) {
-        const slug = slugById.get(p.categoryId) || "";
-        if (!selectedCategories.includes(slug)) continue;
+        if (!selectedCategories.includes(p.categoryId)) continue;
       }
       if (typeof p.discount === "number" && p.discount > 0 && typeof p.price === "number" && p.price > 0) {
         entries.push({ product: p, discountPct: p.discount });
@@ -149,11 +154,11 @@ export default function ProductsPage() {
     return entries;
   }, [showDiscountOnly, allProducts, categories, selectedCategories]);
 
-  const toggleCategory = (categorySlug: string) => {
+  const toggleCategory = (categoryId: string) => {
     setSelectedCategories((prev) =>
-      prev.includes(categorySlug)
-        ? prev.filter((c) => c !== categorySlug)
-        : [...prev, categorySlug]
+      prev.includes(categoryId)
+        ? prev.filter((c) => c !== categoryId)
+        : [...prev, categoryId]
     );
   };
 
@@ -190,12 +195,12 @@ export default function ProductsPage() {
                     className="flex items-center space-x-2"
                   >
                     <Checkbox
-                      id={category.slug}
-                      checked={selectedCategories.includes(category.slug)}
-                      onCheckedChange={() => toggleCategory(category.slug)}
+                      id={category.id}
+                      checked={selectedCategories.includes(category.id)}
+                      onCheckedChange={() => toggleCategory(category.id)}
                     />
                     <Label
-                      htmlFor={category.slug}
+                      htmlFor={category.id}
                       className="text-sm cursor-pointer flex items-center gap-2"
                     >
                       <span>{category.icon}</span>

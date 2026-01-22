@@ -197,6 +197,10 @@ export function ProductCard({ product, categoryName, promoVariationId, forceBase
             </span>
           )}
         </div>
+        {/* Price note (without VAT) - keep subtle to avoid clutter */}
+        <p className="mt-1 text-[10px] text-muted-foreground">
+          {t("price.noteNoVat")}
+        </p>
       </CardContent>
 
       <CardFooter className="p-5 pt-0 mt-auto">

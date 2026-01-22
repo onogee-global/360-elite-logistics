@@ -203,18 +203,18 @@ export default function HomePage() {
               {t("categories.subtitle")}
             </p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-2 md:gap-3">
             {categories.map((category, idx) => (
               <Reveal key={category.id} delay={idx * 0.05}>
                 <Link
-                  href={`/products?category=${category.slug}`}
+                  href={`/products?categoryId=${category.id}`}
                   className="group"
                 >
-                  <Card className="relative overflow-hidden border-2 hover:border-primary transition-all duration-300 hover:shadow-xl hover:-translate-y-1 aspect-square">
+                  <Card className="relative overflow-hidden border hover:border-primary transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 aspect-square">
                     <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <div className="relative h-full flex flex-col items-center justify-center p-6 text-center">
+                    <div className="relative h-full flex flex-col items-center justify-center p-3 text-center">
                       {category.image ? (
-                        <div className="relative h-20 w-20 md:h-24 md:w-24 mb-4 transform group-hover:scale-110 transition-transform">
+                        <div className="relative h-12 w-12 md:h-14 md:w-14 mb-2 transform group-hover:scale-105 transition-transform">
                           <Image
                             src={category.image}
                             alt={locale === "en" ? category.nameEn : category.name}
@@ -223,11 +223,11 @@ export default function HomePage() {
                           />
                         </div>
                       ) : (
-                        <div className="text-5xl md:text-6xl mb-4 transform group-hover:scale-110 transition-transform">
+                        <div className="text-3xl md:text-4xl mb-2 transform group-hover:scale-105 transition-transform">
                           {category.icon}
                         </div>
                       )}
-                      <p className="font-semibold text-base md:text-lg group-hover:text-primary transition-colors">
+                      <p className="font-medium text-xs md:text-sm group-hover:text-primary transition-colors">
                         {locale === "sr" ? category.name : category.nameEn}
                       </p>
                     </div>

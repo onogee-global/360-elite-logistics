@@ -18,6 +18,7 @@ import { useLocale } from "@/lib/locale-context";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { Input } from "@/components/ui/input";
 
 export function CartDrawer() {
   const { items, updateQuantity, removeItem, getTotal, getItemCount } =
@@ -27,11 +28,14 @@ export function CartDrawer() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
+  const [qtyInputs, setQtyInputs] = useState<Record<string, string>>({});
   useEffect(() => {
     setMounted(true);
   }, []);
   const itemCount = getItemCount();
-  const total = getTotal();
+  const subtotal = getTotal();
+  const pdv = subtotal * 0.2;
+  const total = subtotal + pdv;
 
   return (
     <Sheet
@@ -182,9 +186,36 @@ export function CartDrawer() {
                             >
                               <Minus className="h-3 w-3" />
                             </Button>
-                            <span className="w-10 text-center text-sm font-bold">
-                              {item.quantity}
-                            </span>
+                            <Input
+                              type="number"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              min={1}
+                              max={999}
+                              value={qtyInputs[item.variation.id] ?? String(item.quantity)}
+                              onChange={(e) => {
+                                const val = e.target.value.replace(/\D+/g, "");
+                                setQtyInputs((prev) => ({
+                                  ...prev,
+                                  [item.variation.id]: val,
+                                }));
+                              }}
+                              onBlur={() => {
+                                const raw = qtyInputs[item.variation.id] ?? String(item.quantity);
+                                const next = Math.min(999, Math.max(1, parseInt(raw || "1", 10)));
+                                updateQuantity(item.variation.id, next);
+                                setQtyInputs((prev) => ({ ...prev, [item.variation.id]: String(next) }));
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  const raw = qtyInputs[item.variation.id] ?? String(item.quantity);
+                                  const next = Math.min(999, Math.max(1, parseInt(raw || "1", 10)));
+                                  updateQuantity(item.variation.id, next);
+                                  setQtyInputs((prev) => ({ ...prev, [item.variation.id]: String(next) }));
+                                }
+                              }}
+                              className="w-14 h-8 text-center text-sm font-bold border-0 focus-visible:ring-0"
+                            />
                             <Button
                               variant="ghost"
                               size="icon"
@@ -230,10 +261,12 @@ export function CartDrawer() {
             <div className="border-t bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm px-6 py-5 space-y-4 shadow-lg">
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {t("cart.allProducts")}
-                  </span>
-                  <span className="font-semibold">{total.toFixed(2)} RSD</span>
+                  <span className="text-muted-foreground">{t("subtotal")}</span>
+                  <span className="font-semibold">{subtotal.toFixed(2)} RSD</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{t("vat20")}</span>
+                  <span className="font-semibold">{pdv.toFixed(2)} RSD</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between items-center">

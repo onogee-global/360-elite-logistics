@@ -72,10 +72,15 @@ const resend = new Resend(apiKey)
 
   const itemsHtml = buildItemsHtml(input.items)
 
+  // Derive subtotal and PDV from total (total is WITH VAT snapshot)
+  const subtotal = input.total / 1.2
+  const pdv = input.total - subtotal
   const totalHtml = `
-    <p style="margin:12px 0 0 0;font-size:16px">
-      <strong>Ukupno:</strong> ${formatCurrencyRSD(input.total)}
-    </p>
+    <div style="margin:12px 0 0 0;font-size:16px">
+      <p style="margin:4px 0"><strong>Međuzbir:</strong> ${formatCurrencyRSD(subtotal)}</p>
+      <p style="margin:4px 0"><strong>PDV 20%:</strong> ${formatCurrencyRSD(pdv)}</p>
+      <p style="margin:8px 0 0 0"><strong>Ukupno:</strong> ${formatCurrencyRSD(input.total)}</p>
+    </div>
   `
 
   const headerHtml = `

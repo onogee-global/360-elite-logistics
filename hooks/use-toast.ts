@@ -6,7 +6,8 @@ import * as React from 'react'
 import type { ToastActionElement, ToastProps } from '@/components/ui/toast'
 
 const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 2500
+// Fallback removal delay; actual auto-close is handled by Provider `duration`.
+const TOAST_REMOVE_DELAY = 1500
 
 type ToasterToast = ToastProps & {
   id: string
@@ -149,12 +150,18 @@ function toast({ ...props }: Toast) {
     })
   const dismiss = () => dispatch({ type: 'DISMISS_TOAST', toastId: id })
 
+  // Defaults: 1000ms for normal, 1500ms for destructive
+  const resolvedDuration =
+    (props as any)?.duration ??
+    ((props as any)?.variant === 'destructive' ? 1500 : 1000)
+
   dispatch({
     type: 'ADD_TOAST',
     toast: {
       ...props,
       id,
       open: true,
+      duration: resolvedDuration,
       onOpenChange: (open) => {
         if (!open) dismiss()
       },

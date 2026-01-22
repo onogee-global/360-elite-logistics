@@ -1,16 +1,41 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { CheckCircle2, Package, Home } from "lucide-react"
 import { useLocale } from "@/lib/locale-context"
+import { fetchOrderDetail } from "@/lib/supabase"
 
 export default function CheckoutSuccessPage() {
   const searchParams = useSearchParams()
   const orderId = searchParams.get("orderId") || "N/A"
   const { t, locale } = useLocale()
+  const [displayOrderNumber, setDisplayOrderNumber] = useState<string>("")
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      if (!orderId || orderId === "N/A") return
+      try {
+        const detail = await fetchOrderDetail(orderId)
+        if (!cancelled) {
+          if (detail?.orderNumber) {
+            setDisplayOrderNumber(String(detail.orderNumber))
+          } else {
+            setDisplayOrderNumber(orderId)
+          }
+        }
+      } catch {
+        if (!cancelled) setDisplayOrderNumber(orderId)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [orderId])
 
   return (
     <div className="container mx-auto px-4 py-16">
@@ -30,7 +55,7 @@ export default function CheckoutSuccessPage() {
               <Package className="h-5 w-5 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">{t("orderNumber")}</span>
             </div>
-            <p className="text-2xl font-bold">{orderId}</p>
+            <p className="text-2xl font-bold">{displayOrderNumber || "…"}</p>
           </div>
 
           <div className="space-y-4 mb-8">

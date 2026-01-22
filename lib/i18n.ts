@@ -12,6 +12,7 @@ export const translations = {
     // Navigation
     home: "Početna",
     shop: "Prodavnica",
+    mealsForEmployees: "Obroci za zaposlene",
     about: "O nama",
     delivery: "Dostava",
     contact: "Kontakt",
@@ -88,7 +89,7 @@ export const translations = {
     // Hero section translations
     "hero.badge": "Brza dostava širom Srbije",
     "hero.title": "Kupujte namirnice online",
-    "hero.subtitle": "Sveže, kvalitetno i uvek na vreme. Uživajte u brzoj dostavi direktno na vašu adresu.",
+    "hero.subtitle": "Partner u snabdevanju vašeg poslovanja",
     "hero.cta": "Počni kupovinu",
     "hero.ctaSecondary": "Pogledaj akcije",
 
@@ -107,6 +108,8 @@ export const translations = {
     addToCart: "Dodaj u korpu",
     viewDetails: "Pogledaj detalje",
     price: "Cena",
+    "price.noteNoVat": "★ Cene su iskazane bez PDV-a.",
+    vat20: "PDV 20%",
     total: "Ukupno",
     subtotal: "Međuzbir",
     quantity: "Količina",
@@ -148,6 +151,7 @@ export const translations = {
     "cart.promoCode": "Dodaj promo kod",
     "cart.promoCodePlaceholder": "Unesi kod",
     "cart.applyPromo": "Dodaj",
+    "cart.promo": "Popust",
     "cart.orderDetails": "Detalji kupovine",
     "cart.selectAddress": "Odaberite adresu",
     "cart.deliveryDetails": "Detalji preuzimanja",
@@ -304,6 +308,7 @@ export const translations = {
     // Navigation
     home: "Home",
     shop: "Shop",
+    mealsForEmployees: "Employee meals",
     about: "About",
     delivery: "Delivery",
     contact: "Contact",
@@ -381,7 +386,7 @@ export const translations = {
     // Hero section translations
     "hero.badge": "Fast delivery across Serbia",
     "hero.title": "Shop groceries online",
-    "hero.subtitle": "Fresh, quality products delivered on time. Enjoy fast delivery straight to your door.",
+    "hero.subtitle": "Partner in supplying your business",
     "hero.cta": "Start shopping",
     "hero.ctaSecondary": "View deals",
 
@@ -400,6 +405,8 @@ export const translations = {
     addToCart: "Add to cart",
     viewDetails: "View details",
     price: "Price",
+    "price.noteNoVat": "★ Prices are shown without VAT.",
+    vat20: "VAT 20%",
     total: "Total",
     subtotal: "Subtotal",
     quantity: "Quantity",
@@ -441,6 +448,7 @@ export const translations = {
     "cart.promoCode": "Add promo code",
     "cart.promoCodePlaceholder": "Enter code",
     "cart.applyPromo": "Apply",
+    "cart.promo": "Discount",
     "cart.orderDetails": "Order details",
     "cart.selectAddress": "Select address",
     "cart.deliveryDetails": "Delivery details",

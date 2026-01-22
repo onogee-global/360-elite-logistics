@@ -20,7 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { UserPlus, Mail, Lock, User } from "lucide-react";
 import { getCurrentUser } from "../../lib/auth";
-import { supabase } from "@/lib/supabase";
+import { supabase, upsertUserProfile } from "@/lib/supabase";
 import { useLocale } from "@/lib/locale-context";
 import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -37,6 +37,7 @@ export default function RegisterPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
+    pib: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -86,6 +87,31 @@ export default function RegisterPage() {
       return;
     }
 
+    // PIB validation: required, numeric string 8-9 digits
+    const rawPib = (formData.pib || "").trim();
+    if (!rawPib) {
+      toast({
+        title: locale === "en" ? "PIB is required" : "PIB je obavezan",
+        description:
+          locale === "en"
+            ? "Please enter your company PIB"
+            : "Unesite PIB vaše kompanije",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!/^\d{8,9}$/.test(rawPib)) {
+      toast({
+        title: locale === "en" ? "Invalid PIB" : "Neispravan PIB",
+        description:
+          locale === "en"
+            ? "PIB must be 8-9 digits"
+            : "PIB mora imati 8-9 cifara",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       // Store company name as metadata during signup (contact person captured later)
@@ -98,6 +124,36 @@ export default function RegisterPage() {
         },
       });
       if (error) throw error;
+      // Best-effort: if a session exists immediately, upsert user profile with PIB
+      try {
+        const { data } = await supabase.auth.getUser();
+        const u = data.user;
+        if (u) {
+          await upsertUserProfile({
+            userId: u.id,
+            companyName: formData.name,
+            pib: rawPib,
+            address: "",
+            city: "",
+            phone: "",
+            contactName: "",
+          });
+        } else {
+          // Persist pending profile locally to finalize on first login
+          try {
+            localStorage.setItem(
+              "pendingProfile",
+              JSON.stringify({
+                email: formData.email,
+                companyName: formData.name,
+                pib: rawPib,
+              }),
+            );
+          } catch {}
+        }
+      } catch {
+        // ignore if session not yet available (email confirmation flows)
+      }
       toast({
         title: locale === "en" ? "Registration successful" : "Uspešna registracija",
         description:
@@ -123,10 +179,11 @@ export default function RegisterPage() {
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <Image
-              src="/brand/360-logistics-logo-pro.svg"
+              src="/brand/logo.png"
               alt="360 Logistics"
-              width={200}
-              height={200}
+              width={160}
+              height={160}
+              className="h-16 w-auto sm:h-20"
               priority
             />
           </div>
@@ -152,6 +209,22 @@ export default function RegisterPage() {
                   required
                 />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pib">{t("account.pib")}</Label>
+              <Input
+                id="pib"
+                name="pib"
+                type="text"
+                inputMode="numeric"
+                placeholder="12345678"
+                value={formData.pib}
+                onChange={handleInputChange}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                {locale === "en" ? "8–9 digits" : "8–9 cifara"}
+              </p>
             </div>
 
             <div className="space-y-2">

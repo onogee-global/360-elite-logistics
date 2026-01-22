@@ -81,6 +81,7 @@ export function Header() {
   const navLinks = [
     { href: "/", label: t("home"), icon: Home },
     { href: "/products", label: t("shop"), icon: ShoppingBag },
+    { href: "/employee-meals", label: t("mealsForEmployees"), icon: Truck },
     { href: "/about", label: t("about"), icon: Info },
     { href: "/delivery", label: t("delivery"), icon: Truck },
     { href: "/contact", label: t("contact"), icon: Mail },
@@ -250,10 +251,11 @@ export function Header() {
           <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: "easeOut" }}>
             <Link href="/" className="flex items-center gap-2">
               <Image
-                src="/brand/360-logistics-logo-pro.svg"
+                src="/brand/logo.png"
                 alt="360 Logistic"
                 width={200}
-                height={48}
+                height={50}
+                className="h-7 md:h-8 w-auto"
                 priority
               />
             </Link>

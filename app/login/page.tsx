@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { LogIn, Mail, Lock } from "lucide-react";
 import { getCurrentUser, signInWithEmailPassword } from "../../lib/auth";
 import { useLocale } from "@/lib/locale-context";
+import { getUserProfile, upsertUserProfile, supabase } from "@/lib/supabase";
 import Image from "next/image";
 
 export default function LoginPage() {
@@ -33,13 +34,13 @@ export default function LoginPage() {
     password: "",
   });
 
-  // If already logged in, go to home
+  // If already logged in, go to account
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const user = await getCurrentUser();
       if (!cancelled && user) {
-        router.replace("/");
+        router.replace("/account");
       }
     })();
     return () => {
@@ -61,13 +62,37 @@ export default function LoginPage() {
     try {
       await signInWithEmailPassword(formData.email, formData.password);
 
+      // After sign-in, finalize pending profile if present
+      try {
+        const { data } = await supabase.auth.getUser();
+        const user = data.user;
+        if (user) {
+          const raw = localStorage.getItem("pendingProfile");
+          if (raw) {
+            const pending = JSON.parse(raw) as { email?: string; companyName?: string; pib?: string };
+            if (pending?.companyName || pending?.pib) {
+              await upsertUserProfile({
+                userId: user.id,
+                companyName: pending.companyName ?? "",
+                pib: pending.pib ?? "",
+                address: "",
+                city: "",
+                phone: "",
+                contactName: "",
+              });
+            }
+            localStorage.removeItem("pendingProfile");
+          }
+        }
+      } catch {}
+
       toast({
         title: locale === "en" ? "Login successful" : "Uspešna prijava",
         description: locale === "en" ? "Welcome back!" : "Dobrodošli nazad!",
       });
 
       const redirect = searchParams.get("redirect");
-      router.push(redirect || "/");
+      router.push(redirect || "/account");
     } catch (err: any) {
       toast({
         title: locale === "en" ? "Login failed" : "Prijava neuspešna",
@@ -87,10 +112,11 @@ export default function LoginPage() {
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <Image
-              src="/brand/360-logistics-logo-pro.svg"
+              src="/brand/logo.png"
               alt="360 Logistics"
-              width={200}
-              height={200}
+              width={160}
+              height={160}
+              className="h-16 w-auto sm:h-20"
               priority
             />
           </div>
