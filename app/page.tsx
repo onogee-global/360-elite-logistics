@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ProductCard } from "@/components/product-card";
@@ -15,12 +16,14 @@ import Reveal from "@/components/reveal";
 
 export default function HomePage() {
   const { locale, t } = useLocale();
+  const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [cursor, setCursor] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [parallax, setParallax] = useState<{ px: number; py: number }>({ px: 0, py: 0 });
   const [pulse, setPulse] = useState(0);
+  const [tapCategoryId, setTapCategoryId] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -94,7 +97,6 @@ export default function HomePage() {
         <motion.div
           aria-hidden
           className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full blur-3xl"
-          style={{ background: "linear-gradient(135deg, rgba(70,150,255,0.35), rgba(180,220,255,0.28))" }}
           style={{
             background: "linear-gradient(135deg, rgba(70,150,255,0.35), rgba(180,220,255,0.28))",
             x: parallax.px * 24,
@@ -281,12 +283,24 @@ export default function HomePage() {
               {t("categories.subtitle")}
             </p>
           </div>
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-2 md:gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-3">
             {categories.map((category, idx) => (
               <Reveal key={category.id} delay={idx * 0.05}>
-                <Link
-                  href={`/products?categoryId=${category.id}`}
-                  className="group"
+                <motion.button
+                  type="button"
+                  className="group w-full relative"
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    // Show a quick ripple animation on mobile/small screens, then navigate
+                    setTapCategoryId(category.id);
+                    const to = `/products?categoryId=${category.id}`;
+                    if (typeof window !== "undefined" && window.innerWidth < 640) {
+                      setTimeout(() => router.push(to), 180);
+                    } else {
+                      router.push(to);
+                    }
+                  }}
                 >
                   <Card className="relative overflow-hidden border hover:border-primary transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 aspect-square">
                     <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -309,8 +323,21 @@ export default function HomePage() {
                         {locale === "sr" ? category.name : category.nameEn}
                       </p>
                     </div>
+                    {/* Tap ripple animation (mobile focus) */}
+                    {tapCategoryId === category.id && (
+                      <motion.div
+                        className="absolute inset-0 rounded-lg pointer-events-none"
+                        initial={{ opacity: 0.25, scale: 0.9 }}
+                        animate={{ opacity: 0, scale: 1.15 }}
+                        transition={{ duration: 0.18, ease: "easeOut" }}
+                        style={{
+                          background:
+                            "radial-gradient(circle at center, rgba(120,200,255,0.35), rgba(0,0,0,0) 60%)",
+                        }}
+                      />
+                    )}
                   </Card>
-                </Link>
+                </motion.button>
               </Reveal>
             ))}
           </div>
