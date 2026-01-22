@@ -150,7 +150,7 @@ export function ProductCard({ product, categoryName, promoVariationId, forceBase
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.35, ease: "easeOut" }}
     >
-    <Card className="group relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 h-full flex flex-col">
+    <Card className="group relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 h-full flex flex-col rounded-2xl">
       {typeof promoPct === "number" && promoPct > 0 && (
         <Badge className="absolute top-3 right-3 z-10 bg-gradient-to-r from-destructive to-destructive/80 text-destructive-foreground shadow-lg px-3 py-1 text-sm font-bold">
           <Sparkles className="h-3 w-3 mr-1 inline" />-{promoPct}%
@@ -158,14 +158,14 @@ export function ProductCard({ product, categoryName, promoVariationId, forceBase
       )}
 
       <Link href={`/products/${product.id}`}>
-        <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-muted/50 to-muted">
+        <div className="relative aspect-square overflow-hidden bg-white">
           <Image
             src={((promoVar && !forceBaseDiscount ? promoVar.imageUrl : product.image) || "/placeholder.svg") as string}
             alt={displayName}
             fill
-            className="object-contain p-4 group-hover:scale-110 transition-transform duration-500"
+            className="object-contain p-4 group-hover:scale-105 transition-transform duration-500"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="absolute inset-0 ring-1 ring-border/40 rounded-b-none" />
         </div>
       </Link>
 
@@ -181,18 +181,18 @@ export function ProductCard({ product, categoryName, promoVariationId, forceBase
           </h3>
         </Link>
         <p className="text-sm text-muted-foreground mb-3">{displayUnit}</p>
-        <div className="flex items-baseline gap-2 flex-wrap">
+        <div className="mt-auto flex items-baseline gap-2 flex-nowrap">
           {typeof priceOriginal === "number" ? (
             <>
-              <span className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+              <span className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent whitespace-nowrap">
                 {priceNow.toFixed(2)} RSD
               </span>
-              <span className="text-sm text-muted-foreground line-through">
+              <span className="text-sm text-muted-foreground line-through whitespace-nowrap">
                 {priceOriginal.toFixed(2)} RSD
               </span>
             </>
           ) : (
-            <span className="text-2xl font-bold">
+            <span className="text-2xl font-bold whitespace-nowrap">
               {priceNow.toFixed(2)} RSD
             </span>
           )}
