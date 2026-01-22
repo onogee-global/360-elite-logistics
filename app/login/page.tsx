@@ -19,11 +19,14 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { LogIn, Mail, Lock } from "lucide-react";
 import { getCurrentUser, signInWithEmailPassword } from "../../lib/auth";
+import { useLocale } from "@/lib/locale-context";
+import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const { t, locale } = useLocale();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -59,16 +62,18 @@ export default function LoginPage() {
       await signInWithEmailPassword(formData.email, formData.password);
 
       toast({
-        title: "Uspešna prijava",
-        description: "Dobrodošli nazad!",
+        title: locale === "en" ? "Login successful" : "Uspešna prijava",
+        description: locale === "en" ? "Welcome back!" : "Dobrodošli nazad!",
       });
 
       const redirect = searchParams.get("redirect");
       router.push(redirect || "/");
     } catch (err: any) {
       toast({
-        title: "Prijava neuspešna",
-        description: err?.message || "Proverite podatke i pokušajte ponovo",
+        title: locale === "en" ? "Login failed" : "Prijava neuspešna",
+        description:
+          err?.message ||
+          (locale === "en" ? "Check your details and try again" : "Proverite podatke i pokušajte ponovo"),
         variant: "destructive",
       });
     } finally {
@@ -81,24 +86,30 @@ export default function LoginPage() {
       <Card className="max-w-md mx-auto">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-2xl">
-              M
-            </div>
+            <Image
+              src="/brand/360-logistics-logo-pro.svg"
+              alt="360 Logistics"
+              width={200}
+              height={200}
+              priority
+            />
           </div>
-          <CardTitle className="text-2xl">Prijava</CardTitle>
-          <CardDescription>Prijavite se na vaš MAXI nalog</CardDescription>
+          <CardTitle className="text-2xl">{t("loginTitle")}</CardTitle>
+          <CardDescription>
+            {locale === "en" ? "Sign in to your account" : "Prijavite se na vaš nalog"}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email adresa</Label>
+              <Label htmlFor="email">{t("contact.emailLabel")}</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="vas@email.com"
+                  placeholder="name@example.com"
                   className="pl-10"
                   value={formData.email}
                   onChange={handleInputChange}
@@ -109,12 +120,12 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Lozinka</Label>
+                <Label htmlFor="password">{t("password")}</Label>
                 <Link
                   href="/forgot-password"
                   className="text-sm text-primary hover:underline"
                 >
-                  Zaboravili ste lozinku?
+                  {locale === "en" ? "Forgot password?" : "Zaboravili ste lozinku?"}
                 </Link>
               </div>
               <div className="relative">
@@ -139,24 +150,24 @@ export default function LoginPage() {
               disabled={isLoading}
             >
               <LogIn className="mr-2 h-4 w-4" />
-              {isLoading ? "Prijava u toku..." : "Prijavi se"}
+              {isLoading ? (locale === "en" ? "Signing in..." : "Prijava u toku...") : t("login")}
             </Button>
           </form>
 
           <div className="relative my-6">
             <Separator />
             <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
-              ILI
+              {locale === "en" ? "OR" : "ILI"}
             </span>
           </div>
 
           <div className="text-center text-sm">
-            <span className="text-muted-foreground">Nemate nalog? </span>
+            <span className="text-muted-foreground">{locale === "en" ? "Don't have an account? " : "Nemate nalog? "}</span>
             <Link
               href="/register"
               className="text-primary font-medium hover:underline"
             >
-              Registrujte se
+              {t("registerTitle")}
             </Link>
           </div>
         </CardContent>

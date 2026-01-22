@@ -14,7 +14,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  const category = product.categoryId ? await fetchCategoryById(product.categoryId) : null;
+  const category = product.categoryId
+    ? await fetchCategoryById(product.categoryId)
+    : null;
   return <ProductDetail product={product} category={category ?? undefined} />;
 }
 

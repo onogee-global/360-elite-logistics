@@ -21,11 +21,18 @@ import { useToast } from "@/hooks/use-toast";
 import { UserPlus, Mail, Lock, User } from "lucide-react";
 import { getCurrentUser } from "../../lib/auth";
 import { supabase } from "@/lib/supabase";
+import { useLocale } from "@/lib/locale-context";
+import Image from "next/image";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import TermsContent from "@/components/legal/TermsContent";
+import PrivacyContent from "@/components/legal/PrivacyContent";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function RegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const { t, locale } = useLocale();
   const [isLoading, setIsLoading] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [formData, setFormData] = useState({
@@ -61,8 +68,9 @@ export default function RegisterPage() {
 
     if (formData.password !== formData.confirmPassword) {
       toast({
-        title: "Greška",
-        description: "Lozinke se ne poklapaju",
+        title: locale === "en" ? "Error" : "Greška",
+        description:
+          locale === "en" ? "Passwords do not match" : "Lozinke se ne poklapaju",
         variant: "destructive",
       });
       return;
@@ -70,8 +78,9 @@ export default function RegisterPage() {
 
     if (!acceptedTerms) {
       toast({
-        title: "Greška",
-        description: "Morate prihvatiti uslove korišćenja",
+        title: locale === "en" ? "Error" : "Greška",
+        description:
+          locale === "en" ? "You must accept the terms" : "Morate prihvatiti uslove korišćenja",
         variant: "destructive",
       });
       return;
@@ -90,15 +99,17 @@ export default function RegisterPage() {
       });
       if (error) throw error;
       toast({
-        title: "Uspešna registracija",
-        description: "Registracija uspešna.",
+        title: locale === "en" ? "Registration successful" : "Uspešna registracija",
+        description:
+          locale === "en" ? "Registration completed." : "Registracija uspešna.",
       });
       const redirect = searchParams.get("redirect");
       router.push(redirect || "/account");
     } catch (err: any) {
       toast({
-        title: "Registracija neuspešna",
-        description: err?.message || "Pokušajte ponovo kasnije",
+        title: locale === "en" ? "Registration failed" : "Registracija neuspešna",
+        description:
+          err?.message || (locale === "en" ? "Try again later" : "Pokušajte ponovo kasnije"),
         variant: "destructive",
       });
     } finally {
@@ -111,24 +122,30 @@ export default function RegisterPage() {
       <Card className="max-w-md mx-auto">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-2xl">
-              M
-            </div>
+            <Image
+              src="/brand/360-logistics-logo-pro.svg"
+              alt="360 Logistics"
+              width={200}
+              height={200}
+              priority
+            />
           </div>
-          <CardTitle className="text-2xl">Registracija</CardTitle>
-          <CardDescription>Kreirajte vaš MAXI nalog</CardDescription>
+          <CardTitle className="text-2xl">{t("registerTitle")}</CardTitle>
+          <CardDescription>
+            {locale === "en" ? "Create your account" : "Kreirajte vaš nalog"}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Kompanija</Label>
+              <Label htmlFor="name">{t("account.company")}</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="name"
                   name="name"
                   type="text"
-                  placeholder="Naziv kompanije"
+                  placeholder={locale === "en" ? "Company name" : "Naziv kompanije"}
                   className="pl-10"
                   value={formData.name}
                   onChange={handleInputChange}
@@ -138,14 +155,14 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email adresa</Label>
+              <Label htmlFor="email">{t("contact.emailLabel")}</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="vas@email.com"
+                  placeholder="name@example.com"
                   className="pl-10"
                   value={formData.email}
                   onChange={handleInputChange}
@@ -155,7 +172,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Lozinka</Label>
+              <Label htmlFor="password">{t("password")}</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -171,12 +188,14 @@ export default function RegisterPage() {
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Minimum 8 karaktera
+                {locale === "en" ? "Minimum 8 characters" : "Minimum 8 karaktera"}
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Potvrdite lozinku</Label>
+              <Label htmlFor="confirmPassword">
+                {locale === "en" ? "Confirm password" : "Potvrdite lozinku"}
+              </Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -204,14 +223,66 @@ export default function RegisterPage() {
                 htmlFor="terms"
                 className="text-sm leading-relaxed cursor-pointer"
               >
-                Prihvatam{" "}
-                <Link href="/terms" className="text-primary hover:underline">
-                  uslove korišćenja
-                </Link>{" "}
-                i{" "}
-                <Link href="/privacy" className="text-primary hover:underline">
-                  politiku privatnosti
-                </Link>
+                {locale === "en" ? "I accept the " : "Prihvatam "}
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <button type="button" className="text-primary hover:underline">
+                      {locale === "en" ? "terms of use" : "uslove korišćenja"}
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="w-[95vw] sm:max-w-5xl p-0 rounded-2xl border-2 bg-white dark:bg-card shadow-2xl overflow-hidden">
+                    <div className="px-6 py-5 bg-gradient-to-r from-primary/10 via-background to-accent/10">
+                      <DialogHeader className="p-0">
+                        <DialogTitle className="text-xl font-bold">
+                          {locale === "en" ? "Terms of Use" : "Uslovi korišćenja"}
+                        </DialogTitle>
+                      </DialogHeader>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {locale === "en"
+                          ? "Please review our terms below."
+                          : "Molimo pročitajte naše uslove u nastavku."}
+                      </p>
+                    </div>
+                    <ScrollArea className="h-[70vh]">
+                      <div className="p-6">
+                        <TermsContent />
+                      </div>
+                    </ScrollArea>
+                    <div className="px-6 py-4 border-t bg-background/60 text-xs text-muted-foreground">
+                      {locale === "en" ? "Last updated: 2026-01-05" : "Poslednje ažuriranje: 05.01.2026"}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                {locale === "en" ? " and " : " i "}
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <button type="button" className="text-primary hover:underline">
+                      {locale === "en" ? "privacy policy" : "politiku privatnosti"}
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="w-[95vw] sm:max-w-5xl p-0 rounded-2xl border-2 bg-white dark:bg-card shadow-2xl overflow-hidden">
+                    <div className="px-6 py-5 bg-gradient-to-r from-primary/10 via-background to-accent/10">
+                      <DialogHeader className="p-0">
+                        <DialogTitle className="text-xl font-bold">
+                          {locale === "en" ? "Privacy Policy" : "Politika privatnosti"}
+                        </DialogTitle>
+                      </DialogHeader>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {locale === "en"
+                          ? "How we collect and protect your data."
+                          : "Kako prikupljamo i štitimo vaše podatke."}
+                      </p>
+                    </div>
+                    <ScrollArea className="h-[70vh]">
+                      <div className="p-6">
+                        <PrivacyContent />
+                      </div>
+                    </ScrollArea>
+                    <div className="px-6 py-4 border-t bg-background/60 text-xs text-muted-foreground">
+                      {locale === "en" ? "Last updated: 2026-01-05" : "Poslednje ažuriranje: 05.01.2026"}
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </Label>
             </div>
 
@@ -222,24 +293,26 @@ export default function RegisterPage() {
               disabled={isLoading}
             >
               <UserPlus className="mr-2 h-4 w-4" />
-              {isLoading ? "Registracija u toku..." : "Registruj se"}
+              {isLoading ? (locale === "en" ? "Signing up..." : "Registracija u toku...") : t("registerTitle")}
             </Button>
           </form>
 
           <div className="relative my-6">
             <Separator />
             <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
-              ILI
+              {locale === "en" ? "OR" : "ILI"}
             </span>
           </div>
 
           <div className="text-center text-sm">
-            <span className="text-muted-foreground">Već imate nalog? </span>
+            <span className="text-muted-foreground">
+              {locale === "en" ? "Already have an account? " : "Već imate nalog? "}
+            </span>
             <Link
               href="/login"
               className="text-primary font-medium hover:underline"
             >
-              Prijavite se
+              {t("loginTitle")}
             </Link>
           </div>
         </CardContent>
