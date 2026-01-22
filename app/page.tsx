@@ -18,6 +18,9 @@ export default function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cursor, setCursor] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [parallax, setParallax] = useState<{ px: number; py: number }>({ px: 0, py: 0 });
+  const [pulse, setPulse] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -64,44 +67,128 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen">
-      <div className="relative overflow-hidden">
-        <Image
-          src="/brand/hero-breathtaking.svg"
-          alt="360 Logistic hero"
-          fill
-          priority
-          className="object-cover -z-10"
+      <div
+        className="relative overflow-hidden"
+        onMouseMove={(e) => {
+          const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+          const cx = e.clientX - rect.left;
+          const cy = e.clientY - rect.top;
+          setCursor({ x: cx, y: cy });
+          setPulse((p) => (p + 1) % 10000);
+          // normalized center-based parallax (-1..1)
+          const nx = (cx / rect.width) * 2 - 1;
+          const ny = (cy / rect.height) * 2 - 1;
+          setParallax({ px: nx, py: ny });
+        }}
+        onMouseLeave={() => setParallax({ px: 0, py: 0 })}
+      >
+        {/* Hero background inspired by new logo (lighter cool blues) */}
+        <div
+          className="absolute inset-0 -z-10"
+          style={{
+            background:
+              "radial-gradient(1200px 500px at 10% -10%, rgba(90,170,255,0.55), transparent 60%), radial-gradient(1100px 460px at 110% 0%, rgba(120,220,255,0.46), transparent 55%), radial-gradient(900px 620px at 50% 120%, rgba(60,150,255,0.42), transparent 60%), radial-gradient(1400px 700px at -10% 110%, rgba(170,100,255,0.28), transparent 60%), radial-gradient(1200px 700px at 110% 120%, rgba(0,230,210,0.22), transparent 60%), linear-gradient(180deg, rgba(12,26,48,0.08) 0%, rgba(12,26,48,0.05) 40%, rgba(12,26,48,0.04) 100%)",
+          }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/0 to-background/40 -z-10" />
-        {/* Animated gradient layers for a living backdrop */}
+        {/* Subtle moving glows */}
         <motion.div
           aria-hidden
-          className="pointer-events-none absolute -top-32 -left-20 h-72 w-72 rounded-full blur-3xl bg-primary/20 -z-10"
-          animate={{
-            x: [0, 15, -10, 0],
-            y: [0, -10, 10, 0],
-            opacity: [0.6, 0.8, 0.7, 0.6],
-          }}
+          className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full blur-3xl"
+          style={{ background: "linear-gradient(135deg, rgba(70,150,255,0.35), rgba(180,220,255,0.28))" }}
+          style={{
+            background: "linear-gradient(135deg, rgba(70,150,255,0.35), rgba(180,220,255,0.28))",
+            x: parallax.px * 24,
+            y: parallax.py * -18,
+          } as any}
+          animate={{ opacity: [0.55, 0.75, 0.6, 0.55] }}
           transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
           aria-hidden
-          className="pointer-events-none absolute -bottom-28 -right-24 h-80 w-80 rounded-full blur-3xl bg-accent/20 -z-10"
-          animate={{
-            x: [0, -10, 10, 0],
-            y: [0, 12, -8, 0],
-            opacity: [0.5, 0.7, 0.6, 0.5],
-          }}
+          className="pointer-events-none absolute -bottom-28 -right-28 h-80 w-80 rounded-full blur-3xl"
+          style={{
+            background: "linear-gradient(135deg, rgba(120,190,255,0.32), rgba(60,120,230,0.28))",
+            x: parallax.px * -20,
+            y: parallax.py * 16,
+          } as any}
+          animate={{ opacity: [0.5, 0.7, 0.6, 0.5] }}
           transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
         />
+        {/* Interactive ripple pulses at cursor (colorful, not just a circle) */}
+        <motion.div
+          key={`pulse-${pulse}`}
+          aria-hidden
+          className="pointer-events-none absolute -z-10"
+          style={{ left: cursor.x, top: cursor.y, translateX: "-50%", translateY: "-50%" }}
+          initial={{ opacity: 0.35, scale: 0.6, rotate: 0 }}
+          animate={{ opacity: 0, scale: 1.4, rotate: 12 }}
+          transition={{ duration: 1.6, ease: "easeOut" }}
+        >
+          <div
+            className="relative"
+            style={{ width: "46vmin", height: "46vmin" }}
+          >
+            <div
+              className="absolute inset-0 rounded-[40%_60%_50%_50%/40%_40%_60%_60%] blur-xl"
+              style={{
+                background:
+                  "conic-gradient(from 0deg, rgba(0,230,210,0.35), rgba(90,170,255,0.4), rgba(170,100,255,0.35), rgba(0,230,210,0.35))",
+                filter: "saturate(1.2)",
+              }}
+            />
+            <div
+              className="absolute inset-8 rounded-full border"
+              style={{
+                borderColor: "rgba(255,255,255,0.35)",
+                boxShadow: "0 0 40px rgba(120,200,255,0.25) inset",
+              }}
+            />
+          </div>
+        </motion.div>
+        {/* Animated conic hue halo */}
         <motion.div
           aria-hidden
-          className="pointer-events-none absolute top-1/3 left-1/2 -translate-x-1/2 h-64 w-[60%] blur-2xl bg-gradient-to-r from-primary/20 via-transparent to-accent/20 -z-10"
-          animate={{ opacity: [0.15, 0.3, 0.2, 0.15] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[60vmin] w-[60vmin] rounded-full blur-2xl opacity-25 -z-10"
+          style={{
+            background:
+              "conic-gradient(from 0deg, rgba(80,160,255,0.35), rgba(120,220,255,0.3), rgba(60,140,255,0.35), rgba(80,160,255,0.35))",
+          }}
+          animate={{ rotate: [0, 360] }}
+          transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
         />
+        {/* Subtle grid lines overlay */}
+        <div
+          className="absolute inset-0 -z-10 opacity-[0.05] mix-blend-overlay"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(0deg, rgba(255,255,255,0.7), rgba(255,255,255,0.7) 1px, transparent 1px, transparent 14px), repeating-linear-gradient(90deg, rgba(255,255,255,0.7), rgba(255,255,255,0.7) 1px, transparent 1px, transparent 14px)",
+          }}
+        />
+        {/* Faint logo watermark */}
+        <motion.div
+          className="pointer-events-none absolute right-6 top-6 opacity-10 md:opacity-15 -z-10"
+          animate={{ y: [0, 4, 0], opacity: [0.1, 0.14, 0.1] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <Image
+            src="/brand/logo.png"
+            alt=""
+            width={320}
+            height={120}
+            className="w-[160px] md:w-[240px] lg:w-[320px] h-auto drop-shadow"
+            priority
+          />
+        </motion.div>
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-transparent via-transparent to-background/10" />
         <div className="container mx-auto px-4 py-24 md:py-40">
-          <div className="max-w-3xl mx-auto text-center">
+          <motion.div
+            className="max-w-3xl mx-auto text-center will-change-transform"
+            style={{
+              rotateX: parallax.py * -3,
+              rotateY: parallax.px * 3,
+              transformPerspective: 900,
+            } as any}
+          >
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -159,11 +246,7 @@ export default function HomePage() {
                   show: { opacity: 1, y: 0 },
                 }}
               >
-                <Button
-                  size="lg"
-                  className="text-lg px-8 h-14 shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden"
-                  asChild
-                >
+                <Button size="lg" className="text-lg px-8 h-14 shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden" asChild>
                   <Link href="/products" className="group">
                     <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-120%] group-hover:translate-x-[120%] transition-transform duration-700" />
                     {t("hero.cta")}
@@ -177,19 +260,14 @@ export default function HomePage() {
                   show: { opacity: 1, y: 0 },
                 }}
               >
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="text-lg px-8 h-14 bg-transparent"
-                  asChild
-                >
+                <Button size="lg" variant="outline" className="text-lg px-8 h-14 bg-transparent" asChild>
                   <Link href="/products?discount=true">
                     {t("hero.ctaSecondary")}
                   </Link>
                 </Button>
               </motion.div>
             </motion.div>
-          </div>
+          </motion.div>
         </div>
       </div>
 
