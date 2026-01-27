@@ -1,11 +1,11 @@
 "use client";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AdminHeader } from "@/components/admin/admin-header";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
-import { supabase, getUserProfile } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { useAdmin } from "@/lib/admin-context";
 
 export default function AdminLayout({
   children,
@@ -13,38 +13,32 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { toast } = useToast();
   const [authorized, setAuthorized] = useState(false);
+  const { isAdmin, loading, isAuthenticated } = useAdmin();
 
+  // Decide once admin state is known
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const { data } = await supabase.auth.getUser();
-      const user = data.user;
-      if (!user) {
-        router.replace("/login?redirect=/admin");
-        return;
-      }
-      try {
-        const profile = await getUserProfile(user.id);
-        if (!cancelled && profile?.isAdmin) {
-          setAuthorized(true);
-        } else {
-          toast({
-            title: "Pristup odbijen",
-            description: "Samo administratori mogu pristupiti ovoj stranici.",
-            variant: "destructive",
-          });
-          router.replace("/");
-        }
-      } catch {
-        router.replace("/");
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [router, toast]);
+    if (loading) return;
+    if (!isAuthenticated) {
+      const target = pathname || "/admin";
+      const search = new URLSearchParams({ redirect: target }).toString();
+      router.replace(`/login?${search}`);
+      return;
+    }
+    if (isAdmin) {
+      setAuthorized(true);
+    } else {
+      toast({
+        title: "Pristup odbijen",
+        description: "Samo administratori mogu pristupiti ovoj stranici.",
+        variant: "destructive",
+      });
+      router.replace("/");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, isAuthenticated, isAdmin, pathname]);
 
   if (!authorized) {
     return null;
