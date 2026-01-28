@@ -107,8 +107,6 @@ export async function fetchProductsWithVariations(): Promise<Product[]> {
         product_id,
         name,
         nameEn,
-        description,
-        descriptionen,
         price,
         unit,
         unitEn,
