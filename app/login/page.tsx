@@ -34,19 +34,22 @@ export default function LoginPage() {
     password: "",
   });
 
-  // If already logged in, go to account
+  // If already logged in, go to intended destination (redirect) or account
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const user = await getCurrentUser();
       if (!cancelled && user) {
-        router.replace("/account");
+        const redirect = searchParams.get("redirect");
+        const safeRedirect =
+          redirect && redirect.startsWith("/") ? redirect : "/account";
+        router.replace(safeRedirect);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [router, searchParams]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
