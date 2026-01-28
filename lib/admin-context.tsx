@@ -30,6 +30,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
     async function load() {
       try {
+        if (!cancelled) setLoading(true);
         const { data } = await supabase.auth.getUser();
         const user = data.user;
         if (!user) {
@@ -55,7 +56,17 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       }
     }
     load();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => load());
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      // If there is no session, immediately mark as signed out and non-admin
+      if (!session) {
+        setIsAuthenticated(false);
+        setIsAdmin(false);
+        setLoading(false);
+        return;
+      }
+      // Otherwise re-check profile
+      load();
+    });
     return () => {
       cancelled = true;
       sub.subscription.unsubscribe();

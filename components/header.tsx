@@ -73,9 +73,20 @@ export function Header() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setMobileMenuOpen(false);
-    router.push("/");
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      // Optimistically clear local UI state and force a hard reload
+      setUserEmail(null);
+      setUserName(null);
+      setMobileMenuOpen(false);
+      if (typeof window !== "undefined") {
+        window.location.assign("/");
+      } else {
+        router.replace("/");
+        router.refresh();
+      }
+    }
   };
 
   const navLinks = [
