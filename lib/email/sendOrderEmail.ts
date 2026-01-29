@@ -9,9 +9,22 @@ export interface OrderEmailItem {
 
 export interface SendOrderEmailInput {
   orderId: string
+  customerName?: string | null
   customerEmail?: string | null
   customerPhone: string
+  address?: string | null
+  city?: string | null
+  zip?: string | null
+  country?: string | null
   total: number
+  /** Međuzbir (pre popusta) – za prikaz u emailu */
+  subtotal?: number | null
+  /** Kod popusta (npr. SALE10) */
+  promoCode?: string | null
+  /** Iznos popusta u RSD */
+  promoDiscountAmount?: number | null
+  /** Iznos dostave u RSD (0 = besplatno) */
+  deliveryAmount?: number | null
   items: OrderEmailItem[]
 }
 
@@ -74,22 +87,39 @@ const resend = new Resend(apiKey)
 
   const itemsHtml = buildItemsHtml(input.items)
 
-  // Derive subtotal and PDV from total (total is WITH VAT snapshot)
-  const subtotal = input.total / 1.2
-  const pdv = input.total - subtotal
+  // Prikaz cene: međuzbir, eventualno promo, osnovica za PDV, PDV, dostava, ukupno
+  const subtotal = input.subtotal ?? input.total / 1.2
+  const promoAmount = input.promoDiscountAmount ?? 0
+  const taxable = Math.max(0, subtotal - promoAmount)
+  const pdv = taxable * 0.2
+  const deliveryAmount = input.deliveryAmount ?? 0
+  const hasPromo = !!(input.promoCode && promoAmount > 0)
+
   const totalHtml = `
     <div style="margin:12px 0 0 0;font-size:16px">
       <p style="margin:4px 0"><strong>Međuzbir:</strong> ${formatCurrencyRSD(subtotal)}</p>
+      ${hasPromo ? `<p style="margin:4px 0"><strong>Promo (${input.promoCode}):</strong> <span style="color:#16a34a">-${formatCurrencyRSD(promoAmount)}</span></p>` : ""}
+      ${hasPromo ? `<p style="margin:4px 0"><strong>Osnovica za PDV:</strong> ${formatCurrencyRSD(taxable)}</p>` : ""}
       <p style="margin:4px 0"><strong>PDV 20%:</strong> ${formatCurrencyRSD(pdv)}</p>
+      ${deliveryAmount > 0 ? `<p style="margin:4px 0"><strong>Dostava:</strong> ${formatCurrencyRSD(deliveryAmount)}</p>` : ""}
       <p style="margin:8px 0 0 0"><strong>Ukupno:</strong> ${formatCurrencyRSD(input.total)}</p>
     </div>
   `
 
+  const addrParts = [
+    input.address,
+    [input.zip, input.city].filter(Boolean).join(" "),
+    input.country,
+  ].filter(Boolean)
+  const addressLine = addrParts.length > 0 ? addrParts.join(", ") : null
+
   const headerHtml = `
     <div style="font-family:Arial,Helvetica,sans-serif;color:#111;font-size:14px">
       <h2 style="margin:0 0 12px 0">Nova porudžbina #${input.orderId}</h2>
-      <p style="margin:0 0 8px 0"><strong>Telefon kupca:</strong> ${input.customerPhone}</p>
-      ${input.customerEmail ? `<p style="margin:0 0 8px 0"><strong>Email kupca:</strong> ${input.customerEmail}</p>` : ""}
+      ${input.customerName ? `<p style="margin:0 0 8px 0"><strong>Kupac:</strong> ${input.customerName}</p>` : ""}
+      <p style="margin:0 0 8px 0"><strong>Telefon:</strong> ${input.customerPhone}</p>
+      ${input.customerEmail ? `<p style="margin:0 0 8px 0"><strong>Email:</strong> ${input.customerEmail}</p>` : ""}
+      ${addressLine ? `<p style="margin:0 0 8px 0"><strong>Adresa:</strong> ${addressLine}</p>` : ""}
     </div>
   `
 

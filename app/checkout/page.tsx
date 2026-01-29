@@ -38,11 +38,17 @@ export default function CheckoutPage() {
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
 
-  // Subtotal excludes VAT; PDV is added at 20%
+  // Promo iz korpe (unet na /cart) – samo uračunavamo popust i prikazujemo total
+  const appliedPromo = useCartStore((s) => s.appliedPromo);
   const subtotal = getTotal();
-  const pdv = subtotal * 0.2;
-  const deliveryFee = subtotal >= 5000 ? 0 : 800;
-  const total = subtotal + pdv + deliveryFee;
+  const promoDiscountAmount = appliedPromo
+    ? subtotal * (appliedPromo.discount / 100)
+    : 0;
+  const taxableAmount = Math.max(0, subtotal - promoDiscountAmount); // osnovica za PDV
+  const pdv = taxableAmount * 0.2;
+  const amountWithVat = taxableAmount + pdv;
+  const deliveryFee = amountWithVat >= 5000 ? 0 : 840;
+  const total = amountWithVat + deliveryFee;
 
   // Require authenticated user for checkout
   useEffect(() => {
@@ -165,9 +171,14 @@ export default function CheckoutPage() {
         (sum, it) => sum + it.unitPrice * it.quantity,
         0,
       );
-      const pdvComputed = subtotalComputed * 0.2;
-      const deliveryComputed = subtotalComputed >= 5000 ? 0 : 800;
-      const totalWithVat = subtotalComputed + pdvComputed + deliveryComputed;
+      const promoDiscount = appliedPromo
+        ? subtotalComputed * (appliedPromo.discount / 100)
+        : 0;
+      const taxableComputed = Math.max(0, subtotalComputed - promoDiscount);
+      const pdvComputed = taxableComputed * 0.2;
+      const amountWithVatComputed = taxableComputed + pdvComputed;
+      const deliveryComputed = amountWithVatComputed >= 5000 ? 0 : 840;
+      const totalWithVat = amountWithVatComputed + deliveryComputed;
 
       const { orderId } = await createOrder({
         userId: user.id,
@@ -197,9 +208,18 @@ export default function CheckoutPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             orderId,
+            customerName: formData.name,
             customerEmail: formData.email,
             customerPhone: normalizedPhone,
+            address: formData.address,
+            city: formData.city,
+            zip: formData.zip,
+            country: "Srbija",
             total: totalWithVat,
+            subtotal: subtotalComputed,
+            promoCode: appliedPromo?.code ?? null,
+            promoDiscountAmount: promoDiscount > 0 ? promoDiscount : null,
+            deliveryAmount: deliveryComputed,
             items: orderItems.map((it) => ({
               productName: it.name,
               variationName: it.variationName ?? null,
@@ -457,9 +477,7 @@ export default function CheckoutPage() {
 
                 <Separator />
 
-                {/* Promo kod se primenjuje u korpi */}
-
-                {/* Price Breakdown */}
+                {/* Price Breakdown – promo iz korpe se uračunava, polje je samo na /cart */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
@@ -469,6 +487,26 @@ export default function CheckoutPage() {
                       {subtotal.toFixed(2)} RSD
                     </span>
                   </div>
+                  {appliedPromo && (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          {t("cart.promo")} ({appliedPromo.code})
+                        </span>
+                        <span className="font-medium text-green-700">
+                          -{promoDiscountAmount.toFixed(2)} RSD
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          {t("subtotalAfterPromo")}
+                        </span>
+                        <span className="font-medium">
+                          {taxableAmount.toFixed(2)} RSD
+                        </span>
+                      </div>
+                    </>
+                  )}
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">{t("vat20")}</span>
                     <span className="font-medium">{pdv.toFixed(2)} RSD</span>

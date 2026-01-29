@@ -4,8 +4,15 @@ import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import type { CartItem, Product, ProductVariation } from "./types"
 
+export interface AppliedPromo {
+  code: string
+  discount: number
+}
+
 interface CartStore {
   items: CartItem[]
+  appliedPromo: AppliedPromo | null
+  setAppliedPromo: (promo: AppliedPromo | null) => void
   addItem: (product: Product, variation: ProductVariation) => void
   removeItem: (variationId: string) => void
   updateQuantity: (variationId: string, quantity: number) => void
@@ -18,13 +25,16 @@ export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
       items: [],
+      appliedPromo: null,
+      setAppliedPromo: (promo) => set({ appliedPromo: promo }),
       addItem: (product, variation) => {
         set((state) => {
           const existingItem = state.items.find((item) => item.variation.id === variation.id)
           if (existingItem) {
+            const newQty = Math.min(99999, existingItem.quantity + 1)
             return {
               items: state.items.map((item) =>
-                item.variation.id === variation.id ? { ...item, quantity: item.quantity + 1 } : item,
+                item.variation.id === variation.id ? { ...item, quantity: newQty } : item,
               ),
             }
           }
@@ -41,11 +51,12 @@ export const useCartStore = create<CartStore>()(
           get().removeItem(variationId)
           return
         }
+        const clamped = Math.min(99999, Math.max(1, Math.round(quantity)))
         set((state) => ({
-          items: state.items.map((item) => (item.variation.id === variationId ? { ...item, quantity } : item)),
+          items: state.items.map((item) => (item.variation.id === variationId ? { ...item, quantity: clamped } : item)),
         }))
       },
-      clearCart: () => set({ items: [] }),
+      clearCart: () => set({ items: [], appliedPromo: null }),
       getTotal: () => {
         return get().items.reduce((total, item) => {
           const isBaseItem = item.variation.id.startsWith("base-")

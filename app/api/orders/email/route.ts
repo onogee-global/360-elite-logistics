@@ -7,15 +7,33 @@ export async function POST(req: Request) {
     // Accepts both our strict shape and a lenient one with 'name' fields
     const {
       orderId,
+      customerName,
       customerEmail,
       customerPhone,
+      address,
+      city,
+      zip,
+      country,
       total,
+      subtotal,
+      promoCode,
+      promoDiscountAmount,
+      deliveryAmount,
       items,
     }: {
       orderId: string
+      customerName?: string | null
       customerEmail?: string | null
       customerPhone: string
+      address?: string | null
+      city?: string | null
+      zip?: string | null
+      country?: string | null
       total: number
+      subtotal?: number | null
+      promoCode?: string | null
+      promoDiscountAmount?: number | null
+      deliveryAmount?: number | null
       items: Array<
         | OrderEmailItem
         | {
@@ -41,9 +59,18 @@ export async function POST(req: Request) {
 
     const result = await sendOrderEmail({
       orderId,
+      customerName: customerName ?? null,
       customerEmail: customerEmail ?? null,
       customerPhone,
+      address: address ?? null,
+      city: city ?? null,
+      zip: zip ?? null,
+      country: country ?? null,
       total: Number(total),
+      subtotal: subtotal != null ? Number(subtotal) : null,
+      promoCode: promoCode ?? null,
+      promoDiscountAmount: promoDiscountAmount != null ? Number(promoDiscountAmount) : null,
+      deliveryAmount: deliveryAmount != null ? Number(deliveryAmount) : null,
       items: normalizedItems,
     })
     if (!result.ok) {

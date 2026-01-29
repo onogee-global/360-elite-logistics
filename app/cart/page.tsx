@@ -16,21 +16,40 @@ import {
   Truck,
 } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocale } from "@/lib/locale-context";
 import { supabase } from "@/lib/supabase";
 
 export default function CartPage() {
-  const { items, updateQuantity, removeItem, getTotal, clearCart } =
-    useCartStore();
+  const {
+    items,
+    updateQuantity,
+    removeItem,
+    getTotal,
+    clearCart,
+    appliedPromo,
+    setAppliedPromo,
+  } = useCartStore();
   const { locale, t } = useLocale();
   const [promoCode, setPromoCode] = useState("");
-  const [appliedPromo, setAppliedPromo] = useState<{
-    code: string;
-    discount: number;
-  } | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
   const [qtyInputs, setQtyInputs] = useState<Record<string, string>>({});
+
+  // Ukloni iz qtyInputs sve id-eve koji više nisu u korpi (npr. posle Remove ili ponovnog dodavanja)
+  useEffect(() => {
+    const ids = new Set(items.map((i) => i.variation.id));
+    setQtyInputs((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const key of Object.keys(next)) {
+        if (!ids.has(key)) {
+          delete next[key];
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [items]);
 
   // Subtotal excludes VAT; PDV is added on the discounted amount
   const subtotal = getTotal();
@@ -39,8 +58,9 @@ export default function CartPage() {
     : 0;
   const taxableAmount = Math.max(0, subtotal - promoDiscountAmount);
   const pdv = taxableAmount * 0.2;
-  const deliveryFee = subtotal > 0 ? (subtotal >= 5000 ? 0 : 800) : 0;
-  const total = taxableAmount + pdv + deliveryFee;
+  const amountWithVat = taxableAmount + pdv;
+  const deliveryFee = subtotal > 0 ? (amountWithVat >= 5000 ? 0 : 840) : 0;
+  const total = amountWithVat + deliveryFee;
 
   if (items.length === 0) {
     return (
@@ -118,7 +138,8 @@ export default function CartPage() {
                     const isBaseItem = item.variation.id.startsWith("base-");
                     const basePrice = item.variation.price;
                     const variationDiscount =
-                      !isBaseItem && typeof (item.variation as any)?.discount === "number"
+                      !isBaseItem &&
+                      typeof (item.variation as any)?.discount === "number"
                         ? ((item.variation as any).discount as number)
                         : 0;
                     // Apply discount: product-level for base option, variation-level for variations
@@ -126,8 +147,8 @@ export default function CartPage() {
                       isBaseItem && item.product.discount
                         ? basePrice * (1 - (item.product.discount ?? 0) / 100)
                         : variationDiscount > 0
-                        ? basePrice * (1 - variationDiscount / 100)
-                        : basePrice;
+                          ? basePrice * (1 - variationDiscount / 100)
+                          : basePrice;
                     const productName =
                       locale === "sr" ? item.product.name : item.product.nameEn;
                     const variationName =
@@ -181,18 +202,39 @@ export default function CartPage() {
                             </p>
 
                             <div className="flex items-center gap-4">
-                              {/* Quantity Controls */}
+                              {/* Quantity Controls: +/- koriste trenutni prikazani broj (input ili store) */}
                               <div className="flex items-center border-2 rounded-lg shadow-sm">
                                 <Button
                                   variant="ghost"
                                   size="icon"
                                   className="h-10 w-10 hover:bg-muted"
-                                  onClick={() =>
-                                    updateQuantity(
-                                      item.variation.id,
-                                      item.quantity - 1
-                                    )
-                                  }
+                                  onClick={() => {
+                                    const raw =
+                                      qtyInputs[item.variation.id] ??
+                                      String(item.quantity);
+                                    const current = Math.min(
+                                      99999,
+                                      Math.max(
+                                        1,
+                                        parseInt(raw || "1", 10) || 1,
+                                      ),
+                                    );
+                                    if (current <= 1) {
+                                      removeItem(item.variation.id);
+                                      setQtyInputs((prev) => {
+                                        const next = { ...prev };
+                                        delete next[item.variation.id];
+                                        return next;
+                                      });
+                                    } else {
+                                      const next = current - 1;
+                                      updateQuantity(item.variation.id, next);
+                                      setQtyInputs((prev) => ({
+                                        ...prev,
+                                        [item.variation.id]: String(next),
+                                      }));
+                                    }
+                                  }}
                                 >
                                   <Minus className="h-4 w-4" />
                                 </Button>
@@ -201,38 +243,91 @@ export default function CartPage() {
                                   inputMode="numeric"
                                   pattern="[0-9]*"
                                   min={1}
-                                  max={999}
-                                  value={qtyInputs[item.variation.id] ?? String(item.quantity)}
+                                  max={99999}
+                                  value={
+                                    qtyInputs[item.variation.id] ??
+                                    String(item.quantity)
+                                  }
                                   onChange={(e) => {
-                                    const val = e.target.value.replace(/\D+/g, "");
-                                    setQtyInputs((prev) => ({ ...prev, [item.variation.id]: val }));
+                                    const val = e.target.value.replace(
+                                      /\D+/g,
+                                      "",
+                                    );
+                                    const num = parseInt(val || "0", 10) || 0;
+                                    const clamped =
+                                      val === ""
+                                        ? val
+                                        : String(
+                                            Math.min(99999, Math.max(1, num)),
+                                          );
+                                    setQtyInputs((prev) => ({
+                                      ...prev,
+                                      [item.variation.id]: clamped,
+                                    }));
+                                    if (num > 99999 && val !== "") {
+                                      updateQuantity(item.variation.id, 99999);
+                                    }
                                   }}
                                   onBlur={() => {
-                                    const raw = qtyInputs[item.variation.id] ?? String(item.quantity);
-                                    const next = Math.min(999, Math.max(1, parseInt(raw || "1", 10)));
+                                    const raw =
+                                      qtyInputs[item.variation.id] ??
+                                      String(item.quantity);
+                                    const next = Math.min(
+                                      99999,
+                                      Math.max(
+                                        1,
+                                        parseInt(raw || "1", 10) || 1,
+                                      ),
+                                    );
                                     updateQuantity(item.variation.id, next);
-                                    setQtyInputs((prev) => ({ ...prev, [item.variation.id]: String(next) }));
+                                    setQtyInputs((prev) => ({
+                                      ...prev,
+                                      [item.variation.id]: String(next),
+                                    }));
                                   }}
                                   onKeyDown={(e) => {
                                     if (e.key === "Enter") {
-                                      const raw = qtyInputs[item.variation.id] ?? String(item.quantity);
-                                      const next = Math.min(999, Math.max(1, parseInt(raw || "1", 10)));
+                                      const raw =
+                                        qtyInputs[item.variation.id] ??
+                                        String(item.quantity);
+                                      const next = Math.min(
+                                        99999,
+                                        Math.max(
+                                          1,
+                                          parseInt(raw || "1", 10) || 1,
+                                        ),
+                                      );
                                       updateQuantity(item.variation.id, next);
-                                      setQtyInputs((prev) => ({ ...prev, [item.variation.id]: String(next) }));
+                                      setQtyInputs((prev) => ({
+                                        ...prev,
+                                        [item.variation.id]: String(next),
+                                      }));
                                     }
                                   }}
-                                  className="w-16 h-10 text-center text-base font-bold border-0 focus-visible:ring-0"
+                                  className="min-w-[6rem] w-24 h-10 text-center text-base font-bold border-0 focus-visible:ring-0 tabular-nums"
                                 />
                                 <Button
                                   variant="ghost"
                                   size="icon"
                                   className="h-10 w-10 hover:bg-muted"
-                                  onClick={() =>
-                                    updateQuantity(
-                                      item.variation.id,
-                                      item.quantity + 1
-                                    )
-                                  }
+                                  onClick={() => {
+                                    const raw =
+                                      qtyInputs[item.variation.id] ??
+                                      String(item.quantity);
+                                    const current = Math.min(
+                                      99999,
+                                      Math.max(
+                                        1,
+                                        parseInt(raw || "1", 10) || 1,
+                                      ),
+                                    );
+                                    const next = Math.min(99999, current + 1);
+                                    updateQuantity(item.variation.id, next);
+                                    setQtyInputs((prev) => ({
+                                      ...prev,
+                                      [item.variation.id]: String(next),
+                                    }));
+                                  }}
                                 >
                                   <Plus className="h-4 w-4" />
                                 </Button>
@@ -242,7 +337,15 @@ export default function CartPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => removeItem(item.variation.id)}
+                                onClick={() => {
+                                  const id = item.variation.id;
+                                  removeItem(id);
+                                  setQtyInputs((prev) => {
+                                    const next = { ...prev };
+                                    delete next[id];
+                                    return next;
+                                  });
+                                }}
                                 className="text-destructive hover:text-destructive hover:bg-destructive/10"
                               >
                                 <Trash2 className="h-4 w-4 mr-2" />
@@ -256,7 +359,8 @@ export default function CartPage() {
                             <div className="font-bold text-xl mb-1">
                               {(finalPrice * item.quantity).toFixed(2)} RSD
                             </div>
-                            {(isBaseItem && item.product.discount) || (!isBaseItem && variationDiscount > 0) ? (
+                            {(isBaseItem && item.product.discount) ||
+                            (!isBaseItem && variationDiscount > 0) ? (
                               <div className="text-sm text-muted-foreground line-through mb-2">
                                 {(basePrice * item.quantity).toFixed(2)} RSD
                               </div>
@@ -327,7 +431,7 @@ export default function CartPage() {
                               (data ?? []).find(
                                 (r) =>
                                   (r.code ?? "").toLowerCase() ===
-                                  code.toLowerCase()
+                                  code.toLowerCase(),
                               ) ?? null;
                             if (!match) {
                               return;
@@ -354,18 +458,32 @@ export default function CartPage() {
                 {/* Price Breakdown */}
                 <div className="space-y-4">
                   <div className="flex justify-between text-base">
-                    <span className="text-muted-foreground">{t("subtotal")}</span>
-                    <span className="font-semibold">{subtotal.toFixed(2)} RSD</span>
+                    <span className="text-muted-foreground">
+                      {t("subtotal")}
+                    </span>
+                    <span className="font-semibold">
+                      {subtotal.toFixed(2)} RSD
+                    </span>
                   </div>
                   {appliedPromo && (
-                    <div className="flex justify-between text-base">
-                      <span className="text-muted-foreground">
-                        {t("cart.promo")} ({appliedPromo.code})
-                      </span>
-                      <span className="font-semibold text-green-700">
-                        -{promoDiscountAmount.toFixed(2)} RSD
-                      </span>
-                    </div>
+                    <>
+                      <div className="flex justify-between text-base">
+                        <span className="text-muted-foreground">
+                          {t("cart.promo")} ({appliedPromo.code})
+                        </span>
+                        <span className="font-semibold text-green-700">
+                          -{promoDiscountAmount.toFixed(2)} RSD
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-base">
+                        <span className="text-muted-foreground">
+                          {t("subtotalAfterPromo")}
+                        </span>
+                        <span className="font-semibold">
+                          {taxableAmount.toFixed(2)} RSD
+                        </span>
+                      </div>
+                    </>
                   )}
                   <div className="flex justify-between text-base">
                     <span className="text-muted-foreground">{t("vat20")}</span>

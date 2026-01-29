@@ -32,6 +32,21 @@ export function CartDrawer() {
   useEffect(() => {
     setMounted(true);
   }, []);
+  // Ukloni iz qtyInputs sve id-eve koji više nisu u korpi
+  useEffect(() => {
+    const ids = new Set(items.map((i) => i.variation.id));
+    setQtyInputs((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const key of Object.keys(next)) {
+        if (!ids.has(key)) {
+          delete next[key];
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [items]);
   const itemCount = getItemCount();
   const subtotal = getTotal();
   const pdv = subtotal * 0.2;
@@ -57,8 +72,12 @@ export function CartDrawer() {
           <ShoppingCart className="h-5 w-5" />
           <span className="hidden md:inline font-medium">{t("cart")}</span>
           {mounted && itemCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg animate-in zoom-in">
-              {itemCount}
+            <span
+              className={`absolute -top-1 -right-1 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg animate-in zoom-in tabular-nums ${
+                itemCount >= 100 ? "h-6 min-w-[2rem] px-2" : "h-5 w-5"
+              }`}
+            >
+              {itemCount > 9999 ? "9999+" : itemCount}
             </span>
           )}
         </Button>
@@ -106,7 +125,8 @@ export function CartDrawer() {
                   const isBaseItem = item.variation.id.startsWith("base-");
                   const basePrice = item.variation.price;
                   const variationDiscount =
-                    !isBaseItem && typeof (item.variation as any)?.discount === "number"
+                    !isBaseItem &&
+                    typeof (item.variation as any)?.discount === "number"
                       ? ((item.variation as any).discount as number)
                       : 0;
                   // Apply discount: product-level for base option, variation-level for variations
@@ -114,12 +134,14 @@ export function CartDrawer() {
                     isBaseItem && item.product.discount
                       ? basePrice * (1 - (item.product.discount ?? 0) / 100)
                       : variationDiscount > 0
-                      ? basePrice * (1 - variationDiscount / 100)
-                      : basePrice;
+                        ? basePrice * (1 - variationDiscount / 100)
+                        : basePrice;
                   const productName =
                     locale === "sr" ? item.product.name : item.product.nameEn;
                   const variationName =
-                    locale === "sr" ? item.variation.name : item.variation.nameEn;
+                    locale === "sr"
+                      ? item.variation.name
+                      : item.variation.nameEn;
                   // Title is the option name:
                   // - base option → product name
                   // - variation option → variation name
@@ -150,13 +172,18 @@ export function CartDrawer() {
                             item.product.image ||
                             "/placeholder.svg"
                           }
-                            alt={title}
+                          alt={title}
                           fill
                           className="object-contain p-2"
                         />
-                        {(isBaseItem && item.product.discount) || (!isBaseItem && variationDiscount > 0) ? (
+                        {(isBaseItem && item.product.discount) ||
+                        (!isBaseItem && variationDiscount > 0) ? (
                           <div className="absolute top-1 right-1 bg-destructive text-destructive-foreground text-xs font-bold px-1.5 py-0.5 rounded">
-                            -{isBaseItem ? item.product.discount : variationDiscount}%
+                            -
+                            {isBaseItem
+                              ? item.product.discount
+                              : variationDiscount}
+                            %
                           </div>
                         ) : null}
                       </div>
@@ -177,12 +204,30 @@ export function CartDrawer() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 hover:bg-muted hover:text-primary transition-colors"
-                              onClick={() =>
-                                updateQuantity(
-                                  item.variation.id,
-                                  item.quantity - 1
-                                )
-                              }
+                              onClick={() => {
+                                const raw =
+                                  qtyInputs[item.variation.id] ??
+                                  String(item.quantity);
+                                const current = Math.min(
+                                  99999,
+                                  Math.max(1, parseInt(raw || "1", 10) || 1),
+                                );
+                                if (current <= 1) {
+                                  removeItem(item.variation.id);
+                                  setQtyInputs((prev) => {
+                                    const next = { ...prev };
+                                    delete next[item.variation.id];
+                                    return next;
+                                  });
+                                } else {
+                                  const next = current - 1;
+                                  updateQuantity(item.variation.id, next);
+                                  setQtyInputs((prev) => ({
+                                    ...prev,
+                                    [item.variation.id]: String(next),
+                                  }));
+                                }
+                              }}
                             >
                               <Minus className="h-3 w-3" />
                             </Button>
@@ -191,41 +236,77 @@ export function CartDrawer() {
                               inputMode="numeric"
                               pattern="[0-9]*"
                               min={1}
-                              max={999}
-                              value={qtyInputs[item.variation.id] ?? String(item.quantity)}
+                              max={99999}
+                              value={
+                                qtyInputs[item.variation.id] ??
+                                String(item.quantity)
+                              }
                               onChange={(e) => {
                                 const val = e.target.value.replace(/\D+/g, "");
+                                const num = parseInt(val || "0", 10) || 0;
+                                const clamped =
+                                  val === ""
+                                    ? val
+                                    : String(Math.min(99999, Math.max(1, num)));
                                 setQtyInputs((prev) => ({
                                   ...prev,
-                                  [item.variation.id]: val,
+                                  [item.variation.id]: clamped,
                                 }));
+                                if (num > 99999 && val !== "") {
+                                  updateQuantity(item.variation.id, 99999);
+                                }
                               }}
                               onBlur={() => {
-                                const raw = qtyInputs[item.variation.id] ?? String(item.quantity);
-                                const next = Math.min(999, Math.max(1, parseInt(raw || "1", 10)));
+                                const raw =
+                                  qtyInputs[item.variation.id] ??
+                                  String(item.quantity);
+                                const next = Math.min(
+                                  99999,
+                                  Math.max(1, parseInt(raw || "1", 10) || 1),
+                                );
                                 updateQuantity(item.variation.id, next);
-                                setQtyInputs((prev) => ({ ...prev, [item.variation.id]: String(next) }));
+                                setQtyInputs((prev) => ({
+                                  ...prev,
+                                  [item.variation.id]: String(next),
+                                }));
                               }}
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") {
-                                  const raw = qtyInputs[item.variation.id] ?? String(item.quantity);
-                                  const next = Math.min(999, Math.max(1, parseInt(raw || "1", 10)));
+                                  const raw =
+                                    qtyInputs[item.variation.id] ??
+                                    String(item.quantity);
+                                  const next = Math.min(
+                                    99999,
+                                    Math.max(1, parseInt(raw || "1", 10) || 1),
+                                  );
                                   updateQuantity(item.variation.id, next);
-                                  setQtyInputs((prev) => ({ ...prev, [item.variation.id]: String(next) }));
+                                  setQtyInputs((prev) => ({
+                                    ...prev,
+                                    [item.variation.id]: String(next),
+                                  }));
                                 }
                               }}
-                              className="w-14 h-8 text-center text-sm font-bold border-0 focus-visible:ring-0"
+                              className="min-w-[5.5rem] w-24 h-8 text-center text-sm font-bold border-0 focus-visible:ring-0 tabular-nums"
                             />
                             <Button
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 hover:bg-muted hover:text-primary transition-colors"
-                              onClick={() =>
-                                updateQuantity(
-                                  item.variation.id,
-                                  item.quantity + 1
-                                )
-                              }
+                              onClick={() => {
+                                const raw =
+                                  qtyInputs[item.variation.id] ??
+                                  String(item.quantity);
+                                const current = Math.min(
+                                  99999,
+                                  Math.max(1, parseInt(raw || "1", 10) || 1),
+                                );
+                                const next = Math.min(99999, current + 1);
+                                updateQuantity(item.variation.id, next);
+                                setQtyInputs((prev) => ({
+                                  ...prev,
+                                  [item.variation.id]: String(next),
+                                }));
+                              }}
                             >
                               <Plus className="h-3 w-3" />
                             </Button>
@@ -235,7 +316,15 @@ export function CartDrawer() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
-                            onClick={() => removeItem(item.variation.id)}
+                            onClick={() => {
+                              const id = item.variation.id;
+                              removeItem(id);
+                              setQtyInputs((prev) => {
+                                const next = { ...prev };
+                                delete next[id];
+                                return next;
+                              });
+                            }}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -246,7 +335,8 @@ export function CartDrawer() {
                         <div className="font-bold text-base text-primary">
                           {(finalPrice * item.quantity).toFixed(2)} RSD
                         </div>
-                        {(isBaseItem && item.product.discount) || (!isBaseItem && variationDiscount > 0) ? (
+                        {(isBaseItem && item.product.discount) ||
+                        (!isBaseItem && variationDiscount > 0) ? (
                           <div className="text-xs text-muted-foreground line-through">
                             {(basePrice * item.quantity).toFixed(2)} RSD
                           </div>
@@ -262,7 +352,9 @@ export function CartDrawer() {
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t("subtotal")}</span>
-                  <span className="font-semibold">{subtotal.toFixed(2)} RSD</span>
+                  <span className="font-semibold">
+                    {subtotal.toFixed(2)} RSD
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t("vat20")}</span>
