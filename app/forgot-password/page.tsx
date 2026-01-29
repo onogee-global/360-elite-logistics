@@ -1,8 +1,17 @@
 "use client";
 
+// Password reset link in the email goes to /reset-password. Use the same base URL as in Supabase
+// URL Configuration (Site URL). Set NEXT_PUBLIC_APP_URL to that URL in production so reset links match.
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -22,9 +31,14 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      // Use NEXT_PUBLIC_APP_URL in production so the email link always points to your app's reset page
+      const baseUrl =
+        typeof window !== "undefined"
+          ? process.env.NEXT_PUBLIC_APP_URL || window.location.origin
+          : process.env.NEXT_PUBLIC_APP_URL || "";
+      const redirectTo = `${baseUrl.replace(/\/$/, "")}/reset-password`;
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${origin}/reset-password`,
+        redirectTo,
       });
       if (error) throw error;
       toast({
@@ -38,7 +52,9 @@ export default function ForgotPasswordPage() {
     } catch (err: any) {
       toast({
         title: locale === "en" ? "Request failed" : "Zahtev neuspešan",
-        description: err?.message || (locale === "en" ? "Try again later" : "Pokušajte ponovo kasnije"),
+        description:
+          err?.message ||
+          (locale === "en" ? "Try again later" : "Pokušajte ponovo kasnije"),
         variant: "destructive",
       });
     } finally {
@@ -50,7 +66,9 @@ export default function ForgotPasswordPage() {
     <div className="container mx-auto px-4 py-16">
       <Card className="max-w-md mx-auto">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">{locale === "en" ? "Forgot password" : "Zaboravljena lozinka"}</CardTitle>
+          <CardTitle className="text-2xl">
+            {locale === "en" ? "Forgot password" : "Zaboravljena lozinka"}
+          </CardTitle>
           <CardDescription>
             {locale === "en"
               ? "Enter your email and we’ll send you a reset link."
@@ -60,7 +78,9 @@ export default function ForgotPasswordPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">{locale === "en" ? "Email address" : "Email adresa"}</Label>
+              <Label htmlFor="email">
+                {locale === "en" ? "Email address" : "Email adresa"}
+              </Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -75,9 +95,20 @@ export default function ForgotPasswordPage() {
               </div>
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (locale === "en" ? "Sending..." : "Slanje...") : locale === "en" ? "Send reset link" : "Pošalji link"}
+              {loading
+                ? locale === "en"
+                  ? "Sending..."
+                  : "Slanje..."
+                : locale === "en"
+                  ? "Send reset link"
+                  : "Pošalji link"}
             </Button>
-            <Button variant="outline" className="w-full" type="button" onClick={() => router.push("/login")}>
+            <Button
+              variant="outline"
+              className="w-full"
+              type="button"
+              onClick={() => router.push("/login")}
+            >
               {locale === "en" ? "Back to login" : "Nazad na prijavu"}
             </Button>
           </form>
@@ -86,5 +117,3 @@ export default function ForgotPasswordPage() {
     </div>
   );
 }
-
-

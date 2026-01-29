@@ -43,18 +43,34 @@ export default function ResetPasswordPage() {
           },
         );
 
+        // If URL has hash (recovery link), re-check session after Supabase processes it
+        if (
+          typeof window !== "undefined" &&
+          window.location.hash &&
+          !data.session
+        ) {
+          const t = setTimeout(async () => {
+            const { data: retry } = await supabase.auth.getSession();
+            if (!cancelled) setHasSession(!!retry.session);
+          }, 600);
+          return () => {
+            clearTimeout(t);
+            sub.subscription.unsubscribe();
+          };
+        }
+
         return () => sub.subscription.unsubscribe();
       } finally {
         if (!cancelled) setChecking(false);
       }
     };
 
-    let cleanup: any;
+    let cleanup: (() => void) | undefined;
     sync().then((c) => (cleanup = c));
 
     return () => {
       cancelled = true;
-      if (cleanup) cleanup();
+      cleanup?.();
     };
   }, []);
 
