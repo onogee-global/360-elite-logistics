@@ -189,33 +189,34 @@ export default function EmployeeMealsPage() {
   }) {
     return (
       <motion.section
-        className="relative py-16"
+        className="relative py-14 md:py-20"
         initial="hidden"
         whileInView="show"
-        viewport={{ once: true, margin: "-60px", amount: 0.2 }}
+        viewport={{ once: true, margin: "-80px", amount: 0.15 }}
         variants={staggerSlow}
       >
-        <motion.div className="text-center mb-10" variants={stagger}>
-          <motion.div
-            className="inline-block rounded-full px-6 py-2.5 bg-white/15 text-white text-sm font-semibold shadow-lg ring-1 ring-white/25"
+        <motion.div className="text-center mb-12" variants={stagger}>
+          <motion.span
             variants={fadeUp}
+            className="inline-block text-xs font-semibold uppercase tracking-[0.18em] text-white/60 mb-4"
           >
             {titleBadge}
-          </motion.div>
+          </motion.span>
           <motion.h2
-            className="mt-6 text-3xl md:text-4xl font-bold tracking-wide text-white drop-shadow-sm"
+            className="text-2xl md:text-3xl font-bold tracking-tight text-white"
             variants={fadeUp}
           >
             {titleLine}
           </motion.h2>
-          <motion.p className="mt-2 text-sm text-white/80" variants={fadeUp}>
-            {locale === "en"
-              ? "Minimum order size 6 meals"
-              : "Minimalan broj obroka 6"}
+          <motion.p
+            className="mt-2 text-sm text-white/70 font-light"
+            variants={fadeUp}
+          >
+            {locale === "en" ? "Minimum 6 meals" : "Minimalno 6 obroka"}
           </motion.p>
         </motion.div>
         <motion.div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-5"
           variants={staggerCards}
         >
           {daysOrder.map((dk) => {
@@ -224,16 +225,16 @@ export default function EmployeeMealsPage() {
             return (
               <motion.div
                 key={dk}
-                className="rounded-2xl p-[1px] bg-gradient-to-br from-white/20 via-white/10 to-white/5"
+                className="rounded-2xl overflow-hidden bg-white/[0.07] backdrop-blur-xl border border-white/10 shadow-xl shadow-black/10"
                 variants={scaleIn}
                 whileHover={{
-                  y: -6,
-                  scale: 1.02,
-                  transition: { type: "spring", stiffness: 260, damping: 20 },
+                  y: -4,
+                  scale: 1.01,
+                  transition: { type: "spring", stiffness: 320, damping: 24 },
                 }}
-                transition={{ type: "spring", stiffness: 200, damping: 22 }}
+                transition={{ type: "spring", stiffness: 280, damping: 22 }}
               >
-                <Card className="rounded-2xl h-full border-white/20 bg-white/5 backdrop-blur-md shadow-xl shadow-black/10">
+                <Card className="rounded-2xl h-full border-0 bg-transparent shadow-none p-0 gap-0">
                   <CardContent className="p-5">
                     <h3 className="text-lg md:text-xl font-bold mb-3 text-white">
                       {dayLabel}
@@ -263,8 +264,19 @@ export default function EmployeeMealsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-700 via-teal-700 to-cyan-800 text-white overflow-x-hidden">
-      {/* Intro with white text and images */}
+    <motion.div
+      className="min-h-screen text-white overflow-x-hidden antialiased"
+      initial="hidden"
+      animate="show"
+      variants={{
+        hidden: {},
+        show: { transition: { staggerChildren: 0.05, delayChildren: 0.08 } },
+      }}
+      style={{
+        background:
+          "linear-gradient(165deg, #0d9488 0%, #0f766e 28%, #115e59 50%, #134e4a 72%, #0f766e 100%)",
+      }}
+    >
       <div className="relative overflow-hidden">
         {/* Animated background orbs */}
         <motion.div
@@ -317,13 +329,19 @@ export default function EmployeeMealsPage() {
         />
         <div className="container mx-auto px-4 py-14 md:py-20 relative z-10">
           <motion.div
-            className="max-w-5xl mx-auto text-center text-white"
+            className="max-w-4xl mx-auto text-center"
             variants={stagger}
             initial="hidden"
             animate="show"
           >
+            <motion.span
+              variants={fadeUp}
+              className="inline-block text-xs font-semibold uppercase tracking-[0.2em] text-white/60 mb-5"
+            >
+              B2B
+            </motion.span>
             <motion.h1
-              className="text-4xl md:text-6xl font-bold tracking-tight"
+              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.08]"
               variants={fadeUp}
               style={{
                 background:
@@ -335,21 +353,25 @@ export default function EmployeeMealsPage() {
             >
               {locale === "en" ? "Employee Meals" : "Obroci za zaposlene"}
             </motion.h1>
+            <motion.div
+              variants={fadeUp}
+              className="mt-5 h-px w-14 mx-auto rounded-full bg-white/35"
+            />
             <motion.p
-              className="mt-5 text-base md:text-lg/7 text-white/92 max-w-2xl mx-auto"
+              className="mt-5 text-base md:text-lg text-white/90 max-w-xl mx-auto font-light"
               variants={fadeUp}
             >
               {locale === "en"
                 ? "Flexible, reliable daily meal supply for your team. We tailor options to your company’s needs."
-                : "Fleksibilna i pouzdana isporuka obroka za vaš tim. Prilagođavamo ponudu potrebama vaše kompanije."}
+                : "Fleksibilna i pouzdana isporuka obroka za vaš tim."}
             </motion.p>
             <motion.p
-              className="mt-4 text-sm md:text-base/7 text-white/88 max-w-3xl mx-auto leading-relaxed"
+              className="mt-3 text-sm md:text-base text-white/75 max-w-2xl mx-auto leading-relaxed font-light"
               variants={fadeUp}
             >
               {locale === "en"
-                ? "We provide employees with fresh, tasty, and nutritionally balanced meals adapted to everyday work demands. Our meals are prepared with quality ingredients, paying attention to variety and proper nutrition. Regular and reliable delivery enables companies to provide their teams with a quality meal and more energy throughout the workday."
-                : "Zaposlenima obezbeđujemo sveže, ukusne i nutritivno izbalansirane obroke prilagođene svakodnevnim radnim obavezama. Naši obroci se pripremaju od kvalitetnih namirnica, uz pažnju na raznovrsnost i pravilnu ishranu. Redovna i pouzdana isporuka omogućava firmama da svojim timovima obezbede kvalitetan obrok i veću energiju tokom radnog dana."}
+                ? "Fresh, tasty, nutritionally balanced meals. Quality ingredients, variety, reliable delivery."
+                : "Sveži, ukusni i izbalansirani obroci. Kvalitetne namirnice i pouzdana isporuka."}
             </motion.p>
             <motion.div
               className="mt-14 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 max-w-7xl mx-auto"
@@ -374,34 +396,30 @@ export default function EmployeeMealsPage() {
                   altSr: "Suvidirane pileće grudi sa dva pirea",
                   altEn: "Sous‑vide chicken with two purees",
                 },
-              ].map((img) => (
+              ].map((img, i) => (
                 <motion.div
                   key={img.src}
-                  className="group relative aspect-square w-full overflow-hidden rounded-[28px] ring-2 ring-white/20 bg-white/5 backdrop-blur-sm shadow-[0_20px_50px_-15px_rgba(0,0,0,0.4)]"
+                  className="group relative aspect-square w-full overflow-hidden rounded-3xl bg-white/5 backdrop-blur-md border border-white/10 shadow-2xl shadow-black/20"
                   variants={scaleIn}
                   whileHover={{
-                    scale: 1.03,
-                    y: -8,
-                    transition: { type: "spring", stiffness: 260, damping: 22 },
+                    scale: 1.02,
+                    y: -6,
+                    transition: { type: "spring", stiffness: 300, damping: 25 },
                   }}
-                  transition={{ type: "spring", stiffness: 220, damping: 20 }}
+                  transition={{ type: "spring", stiffness: 260, damping: 22 }}
+                  style={{
+                    boxShadow:
+                      "0 25px 50px -12px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.05)",
+                  }}
                 >
                   <Image
                     src={img.src}
                     alt={locale === "en" ? img.altEn : img.altSr}
                     fill
-                    className="object-contain transition-transform duration-700 ease-out group-hover:scale-105"
+                    className="object-contain transition-transform duration-500 ease-out group-hover:scale-105"
                     sizes="(min-width:1280px) 30vw, (min-width:768px) 45vw, 100vw"
                   />
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-70 group-hover:opacity-50 transition-opacity duration-500" />
-                  <div
-                    className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                    style={{
-                      background:
-                        "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.08) 50%, transparent 60%)",
-                      backgroundSize: "200% 100%",
-                    }}
-                  />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-80 group-hover:opacity-60 transition-opacity duration-300" />
                 </motion.div>
               ))}
             </motion.div>
@@ -409,7 +427,8 @@ export default function EmployeeMealsPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-12">
+      {/* Sections: smooth scroll-in, no hard edges */}
+      <div className="container mx-auto px-4 py-16 md:py-24">
         <Section
           titleBadge={
             locale === "en"
@@ -433,17 +452,17 @@ export default function EmployeeMealsPage() {
         />
 
         <motion.div
-          className="max-w-5xl mx-auto mt-20 grid md:grid-cols-3 gap-6"
+          className="max-w-5xl mx-auto mt-24 grid md:grid-cols-3 gap-6"
           initial="hidden"
           whileInView="show"
-          viewport={{ once: true, margin: "-60px", amount: 0.2 }}
+          viewport={{ once: true, margin: "-80px", amount: 0.2 }}
           variants={staggerCards}
         >
           {[
             {
               title: locale === "en" ? "Benefits" : "Prednosti",
               content: (
-                <ul className="text-sm text-white/85 space-y-1 list-disc pl-4">
+                <ul className="text-sm text-white/80 space-y-2 list-disc pl-4 font-light">
                   <li>
                     {locale === "en"
                       ? "Simple monthly invoicing"
@@ -461,7 +480,7 @@ export default function EmployeeMealsPage() {
             {
               title: locale === "en" ? "How it works" : "Kako funkcioniše",
               content: (
-                <ol className="text-sm text-white/85 space-y-1 list-decimal pl-4">
+                <ol className="text-sm text-white/80 space-y-2 list-decimal pl-4 font-light">
                   <li>
                     {locale === "en" ? "Contact us" : "Kontaktirajte nas"}
                   </li>
@@ -479,25 +498,27 @@ export default function EmployeeMealsPage() {
             {
               title: locale === "en" ? "Contact" : "Kontakt",
               content: (
-                <p className="text-sm text-white/85">
+                <p className="text-sm text-white/80 font-light leading-relaxed">
                   {locale === "en"
-                    ? "Write to 360elitelogistic@gmail.com or use the contact page."
-                    : "Pišite na 360elitelogistic@gmail.com ili koristite stranicu za kontakt."}
+                    ? "360elitelogistic@gmail.com or contact page."
+                    : "360elitelogistic@gmail.com ili stranica za kontakt."}
                 </p>
               ),
             },
           ].map((block) => (
             <motion.div
               key={block.title}
+              className="rounded-2xl overflow-hidden bg-white/[0.07] backdrop-blur-xl border border-white/10 shadow-xl shadow-black/10 h-full"
               variants={scaleIn}
               whileHover={{
                 y: -4,
-                transition: { type: "spring", stiffness: 260, damping: 22 },
+                scale: 1.01,
+                transition: { type: "spring", stiffness: 320, damping: 24 },
               }}
             >
-              <Card className="border-white/20 bg-white/5 backdrop-blur-md shadow-xl shadow-black/10 h-full transition-shadow duration-300 hover:shadow-2xl hover:shadow-black/15">
+              <Card className="border-0 bg-transparent shadow-none h-full p-0 gap-0">
                 <CardContent className="p-6">
-                  <h3 className="font-semibold mb-2 text-white">
+                  <h3 className="font-semibold mb-3 text-white tracking-tight">
                     {block.title}
                   </h3>
                   {block.content}
@@ -507,6 +528,6 @@ export default function EmployeeMealsPage() {
           ))}
         </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }

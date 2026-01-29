@@ -107,14 +107,27 @@ export function Header() {
   }, []);
 
   return (
-    <header
-      className={`sticky top-0 z-50 w-full border-b ${scrolled ? "backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-sm" : "bg-background"}`}
+    <motion.header
+      initial={{ opacity: 0, y: -20 }}
+      animate={{
+        opacity: 1,
+        y: 0,
+        boxShadow: scrolled
+          ? "0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05)"
+          : "none",
+      }}
+      transition={{
+        opacity: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
+        y: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
+        boxShadow: { duration: 0.25 },
+      }}
+      className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80"
     >
       <div className="bg-gradient-to-r from-primary via-accent to-primary text-primary-foreground">
         <motion.div
-          initial={{ opacity: 0, y: -8 }}
+          initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: "easeOut" }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
           className="container mx-auto px-4 py-2"
         >
           <div className="flex items-center justify-between md:justify-between gap-4 text-xs md:text-sm overflow-x-auto scrollbar-hide h-2">
@@ -137,7 +150,17 @@ export function Header() {
         </motion.div>
       </div>
 
-      <div className="container mx-auto px-4 py-3 md:py-4">
+      <motion.div
+        className="container mx-auto px-4 py-3 md:py-4"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: {},
+          visible: {
+            transition: { staggerChildren: 0.06, delayChildren: 0.1 },
+          },
+        }}
+      >
         <div className="flex items-center gap-2 md:gap-6">
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
@@ -183,18 +206,38 @@ export function Header() {
                   {navLinks.map((link, index) => {
                     const Icon = link.icon;
                     return (
-                      <Link
+                      <motion.div
                         key={link.href}
-                        href={link.href}
-                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 group animate-in slide-in-from-left"
-                        style={{ animationDelay: `${index * 50}ms` }}
-                        onClick={() => setMobileMenuOpen(false)}
+                        initial={false}
+                        animate={
+                          mobileMenuOpen
+                            ? {
+                                opacity: 1,
+                                x: 0,
+                                transition: {
+                                  duration: 0.3,
+                                  ease: [0.22, 1, 0.36, 1],
+                                  delay: index * 0.05,
+                                },
+                              }
+                            : { opacity: 0, x: -12, transition: { duration: 0.15 } }
+                        }
                       >
-                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted group-hover:bg-primary/20 transition-colors">
-                          <Icon className="h-4 w-4" />
-                        </div>
-                        <span>{link.label}</span>
-                      </Link>
+                        <Link
+                          href={link.href}
+                          className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 group"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <motion.div
+                            className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted group-hover:bg-primary/20 transition-colors"
+                            whileHover={{ scale: 1.05 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                          >
+                            <Icon className="h-4 w-4" />
+                          </motion.div>
+                          <span>{link.label}</span>
+                        </Link>
+                      </motion.div>
                     );
                   })}
                 </nav>
@@ -262,40 +305,69 @@ export function Header() {
 
           {/* Logo */}
           <motion.div
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
+            variants={{
+              hidden: { opacity: 0, x: -12 },
+              visible: {
+                opacity: 1,
+                x: 0,
+                transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
+              },
+            }}
           >
-            <Link href="/" className="flex items-center gap-2">
-              <Image
-                src="/brand/logo.png"
-                alt="360 Logistic"
-                width={200}
-                height={50}
-                className="h-7 md:h-8 w-auto"
-                priority
-              />
+            <Link href="/" className="flex items-center gap-2 group">
+              <motion.span
+                className="block"
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              >
+                <Image
+                  src="/brand/logo.png"
+                  alt="360 Logistic"
+                  width={200}
+                  height={50}
+                  className="h-7 md:h-8 w-auto transition-opacity group-hover:opacity-90"
+                  priority
+                />
+              </motion.span>
             </Link>
           </motion.div>
 
-          <form
+          <motion.form
             onSubmit={handleSearch}
             className="hidden sm:flex flex-1 max-w-2xl"
+            variants={{
+              hidden: { opacity: 0, y: 6 },
+              visible: {
+                opacity: 1,
+                y: 0,
+                transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
+              },
+            }}
           >
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder={t("search")}
-                className="pl-10"
+                className="pl-10 transition-all duration-200 focus:ring-2 focus:ring-primary/20"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-          </form>
+          </motion.form>
 
           {/* Actions */}
-          <div className="flex items-center gap-1 md:gap-2 ml-auto">
+          <motion.div
+            className="flex items-center gap-1 md:gap-2 ml-auto"
+            variants={{
+              hidden: { opacity: 0, x: 12 },
+              visible: {
+                opacity: 1,
+                x: 0,
+                transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
+              },
+            }}
+          >
             <Button
               variant="ghost"
               size="sm"
@@ -344,13 +416,23 @@ export function Header() {
                 {locale === "sr" ? "Odjava" : "Logout"}
               </Button>
             )}
-            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
+            <motion.div
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            >
               <CartDrawer />
             </motion.div>
-          </div>
+          </motion.div>
         </div>
 
-        <form onSubmit={handleSearch} className="sm:hidden mt-3">
+        <motion.form
+          onSubmit={handleSearch}
+          className="sm:hidden mt-3"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.3 }}
+        >
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -361,24 +443,40 @@ export function Header() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-        </form>
-      </div>
+        </motion.form>
+      </motion.div>
 
-      <div className="border-t hidden md:block">
+      <motion.div
+        className="border-t border-border/50 hidden md:block"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.25, duration: 0.35 }}
+      >
         <div className="container mx-auto px-4">
           <nav className="flex items-center gap-6 py-3 text-sm">
-            {navLinks.map((link) => (
-              <Link
+            {navLinks.map((link, i) => (
+              <motion.div
                 key={link.href}
-                href={link.href}
-                className="hover:text-primary font-medium"
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.3,
+                  ease: [0.22, 1, 0.36, 1],
+                  delay: 0.35 + i * 0.04,
+                }}
               >
-                {link.label}
-              </Link>
+                <Link
+                  href={link.href}
+                  className="relative py-1.5 font-medium text-foreground/90 hover:text-primary transition-colors duration-200 group block"
+                >
+                  {link.label}
+                  <span className="absolute bottom-0 left-0 h-0.5 bg-primary rounded-full w-0 group-hover:w-full transition-all duration-200 origin-left" />
+                </Link>
+              </motion.div>
             ))}
           </nav>
         </div>
-      </div>
-    </header>
+      </motion.div>
+    </motion.header>
   );
 }
