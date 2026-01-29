@@ -512,7 +512,7 @@ export interface CreateOrderInput {
   items: CreateOrderItemInput[]
 }
 
-export async function createOrder(input: CreateOrderInput): Promise<{ orderId: string }> {
+export async function createOrder(input: CreateOrderInput): Promise<{ orderId: string; orderNumber?: number }> {
   const { data: orderRow, error: orderError } = await supabase
     .from("orders")
     .insert({
@@ -528,14 +528,16 @@ export async function createOrder(input: CreateOrderInput): Promise<{ orderId: s
       zip: input.address.zip,
       country: input.address.country,
     })
-    .select("id")
+    .select("id, order_number")
     .single()
+    .returns<{ id: string; order_number?: number | null }>()
 
   if (orderError || !orderRow) {
     throw orderError ?? new Error("Failed to create order")
   }
 
   const orderId = orderRow.id as string
+  const orderNumber = typeof orderRow.order_number === "number" ? orderRow.order_number : undefined
 
   const itemsPayload = input.items.map((it) => ({
     order_id: orderId,
@@ -553,7 +555,7 @@ export async function createOrder(input: CreateOrderInput): Promise<{ orderId: s
     throw itemsError
   }
 
-  return { orderId }
+  return { orderId, orderNumber }
 }
 
 export interface OrderSummary {
@@ -596,13 +598,22 @@ export async function fetchOrdersForUser(userId: string): Promise<OrderSummary[]
     countByOrderId.set(it.order_id, prev + (it.quantity ?? 0))
   }
 
+  // Redni broj po user-u: 1 = prva, 2 = druga, ... (created_at asc)
+  const byCreatedAsc = [...orders].sort(
+    (a, b) =>
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime() ||
+      String(a.id).localeCompare(String(b.id)),
+  )
+  const userOrderIndex = new Map<string, number>()
+  byCreatedAsc.forEach((o, i) => userOrderIndex.set(o.id, i + 1))
+
   return orders.map((o) => ({
     id: o.id,
     createdAt: o.created_at,
-    total: o.total,
-    status: o.status,
+    total: o.total ?? 0,
+    status: o.status ?? "pending",
     itemsCount: countByOrderId.get(o.id) ?? 0,
-    orderNumber: typeof o.order_number === "number" ? o.order_number : undefined,
+    orderNumber: userOrderIndex.get(o.id),
   }))
 }
 
@@ -628,11 +639,31 @@ export interface OrderDetail {
 export async function fetchOrderDetail(orderId: string): Promise<OrderDetail | null> {
   const { data: order, error: orderErr } = await supabase
     .from("orders")
-    .select("id, created_at, total, order_number")
+    .select("id, created_at, total, order_number, user_id")
     .eq("id", orderId)
     .single()
     .returns<any>()
   if (orderErr || !order) return null
+
+  // Redni broj samo za tog usera: nalazimo 1-based indeks u listi njegovih porudžbina
+  let orderNumber: number | undefined
+  const userId = order.user_id as string | undefined
+  if (userId) {
+    const { data: userOrders } = await supabase
+      .from("orders")
+      .select("id")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true })
+      .returns<{ id: string }[]>()
+    const ids = (userOrders ?? []).map((o) => o.id)
+    const idx = ids.indexOf(orderId)
+    if (idx >= 0) orderNumber = idx + 1
+  }
+  if (orderNumber == null) {
+    const n = Number(order.order_number)
+    orderNumber = !isNaN(n) && n >= 1 ? n : undefined
+  }
 
   // Try to read snapshot image if the column exists; otherwise fall back to current images
   let mapped: OrderItemDetail[] = []
@@ -710,7 +741,7 @@ export async function fetchOrderDetail(orderId: string): Promise<OrderDetail | n
     createdAt: order.created_at,
     total: order.total,
     items: mapped,
-    orderNumber: typeof order.order_number === "number" ? order.order_number : undefined,
+    orderNumber,
   }
 }
 

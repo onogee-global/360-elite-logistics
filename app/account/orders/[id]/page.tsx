@@ -111,7 +111,7 @@ export default function OrderDetailPage({
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl md:text-3xl font-bold">
           {typeof order.orderNumber === "number"
-            ? `Porudžbina ${order.orderNumber}.`
+            ? `Porudžbina #${order.orderNumber}`
             : `Porudžbina #${order.id}`}
         </h1>
         <div className="flex gap-2">

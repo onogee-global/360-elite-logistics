@@ -184,6 +184,7 @@ export const translations = {
     "account.saveErrorDesc": "Pokušajte ponovo kasnije",
     "account.ordersTitle": "Moje porudžbine",
     "account.ordersSubtitle": "Pregled svih vaših porudžbina",
+    "account.ordersSubtitleHint": "Broj porudžbine je redni po vašem nalogu (1, 2, 3…).",
     "account.showDetails": "Prikaži detalje",
     "account.orderLabel": "Porudžbina",
 
@@ -230,6 +231,7 @@ export const translations = {
     orderSuccess: "Narudžbina uspešno poslata!",
     orderSuccessMessage: "Vaša narudžbina je primljena. Kontaktiraćemo vas uskoro.",
     orderNumber: "Broj narudžbine",
+    orderNumberHint: "Redni broj vaše porudžbine (1, 2, 3…)",
 
     // Footer
     aboutUs: "O nama",
@@ -485,6 +487,7 @@ export const translations = {
     "account.saveErrorDesc": "Please try again later",
     "account.ordersTitle": "My orders",
     "account.ordersSubtitle": "Overview of all your orders",
+    "account.ordersSubtitleHint": "Order number is sequential for your account (1, 2, 3…).",
     "account.showDetails": "View details",
     "account.orderLabel": "Order",
 
@@ -531,6 +534,7 @@ export const translations = {
     orderSuccess: "Order placed successfully!",
     orderSuccessMessage: "Your order has been received. We will contact you soon.",
     orderNumber: "Order number",
+    orderNumberHint: "Sequential number for your account (1, 2, 3…)",
 
     // Footer
     aboutUs: "About us",

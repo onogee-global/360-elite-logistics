@@ -9,6 +9,8 @@ export interface OrderEmailItem {
 
 export interface SendOrderEmailInput {
   orderId: string
+  /** Redni broj porudžbine po kupcu (za prikaz) */
+  orderNumber?: number | null
   customerName?: string | null
   customerEmail?: string | null
   customerPhone: string
@@ -83,7 +85,8 @@ export async function sendOrderEmail(input: SendOrderEmailInput): Promise<SendOr
 
 const resend = new Resend(apiKey)
 
-  const subject = `Nova porudžbina #${input.orderId}`
+  const displayNum = typeof input.orderNumber === "number" ? String(input.orderNumber) : input.orderId
+  const subject = `Nova porudžbina #${displayNum}`
 
   const itemsHtml = buildItemsHtml(input.items)
 
@@ -117,7 +120,7 @@ const resend = new Resend(apiKey)
 
   const headerHtml = `
     <div style="font-family:Arial,Helvetica,sans-serif;color:#111;font-size:14px">
-      <h2 style="margin:0 0 12px 0">Nova porudžbina #${input.orderId}</h2>
+      <h2 style="margin:0 0 12px 0">Nova porudžbina #${displayNum}</h2>
       ${input.customerName ? `<p style="margin:0 0 8px 0"><strong>Kupac:</strong> ${input.customerName}</p>` : ""}
       <p style="margin:0 0 8px 0"><strong>Telefon:</strong> ${input.customerPhone}</p>
       ${input.customerEmail ? `<p style="margin:0 0 8px 0"><strong>Email:</strong> ${input.customerEmail}</p>` : ""}

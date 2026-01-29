@@ -17,7 +17,13 @@ import { useToast } from "@/hooks/use-toast";
 import { User, Package, MapPin, Settings } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { fetchOrdersForUser, type OrderSummary, getUserProfile, upsertUserProfile, type UserProfile } from "@/lib/supabase";
+import {
+  fetchOrdersForUser,
+  type OrderSummary,
+  getUserProfile,
+  upsertUserProfile,
+  type UserProfile,
+} from "@/lib/supabase";
 import { useLocale } from "@/lib/locale-context";
 
 export default function AccountPage() {
@@ -76,13 +82,21 @@ export default function AccountPage() {
     }
     load();
     // Restore UI state: tab and scroll position
-    const urlTab = (searchParams?.get("tab") as "account" | "orders" | null) ?? null;
-    const savedTab = (typeof window !== "undefined"
-      ? (sessionStorage.getItem("account.activeTab") as "account" | "orders" | null)
-      : null) ?? null;
+    const urlTab =
+      (searchParams?.get("tab") as "account" | "orders" | null) ?? null;
+    const savedTab =
+      (typeof window !== "undefined"
+        ? (sessionStorage.getItem("account.activeTab") as
+            | "account"
+            | "orders"
+            | null)
+        : null) ?? null;
     const nextTab = urlTab || savedTab;
     if (nextTab) setActiveTab(nextTab);
-    const resume = typeof window !== "undefined" ? sessionStorage.getItem("account.resume") : null;
+    const resume =
+      typeof window !== "undefined"
+        ? sessionStorage.getItem("account.resume")
+        : null;
     if (resume) {
       try {
         const { scrollY } = JSON.parse(resume) as { scrollY?: number };
@@ -134,7 +148,9 @@ export default function AccountPage() {
         <h1 className="text-3xl font-bold mb-2">{t("account.title")}</h1>
         <p className="text-muted-foreground">
           {/* Simple generic subtitle not in i18n to keep noise low */}
-          {locale === "en" ? "Manage your account and orders" : "Upravljajte vašim nalogom i porudžbinama"}
+          {locale === "en"
+            ? "Manage your account and orders"
+            : "Upravljajte vašim nalogom i porudžbinama"}
         </p>
       </div>
 
@@ -174,9 +190,7 @@ export default function AccountPage() {
                 <Settings className="h-5 w-5" />
                 {t("account.profileTitle")}
               </CardTitle>
-              <CardDescription>
-                {t("account.profileDesc")}
-              </CardDescription>
+              <CardDescription>{t("account.profileDesc")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -184,7 +198,11 @@ export default function AccountPage() {
                 <Input
                   id="company"
                   value={profile?.companyName ?? ""}
-                  onChange={(e) => setProfile((p) => (p ? { ...p, companyName: e.target.value } : p))}
+                  onChange={(e) =>
+                    setProfile((p) =>
+                      p ? { ...p, companyName: e.target.value } : p,
+                    )
+                  }
                   placeholder="Naziv kompanije"
                 />
               </div>
@@ -193,7 +211,9 @@ export default function AccountPage() {
                 <Input
                   id="pib"
                   value={profile?.pib ?? ""}
-                  onChange={(e) => setProfile((p) => (p ? { ...p, pib: e.target.value } : p))}
+                  onChange={(e) =>
+                    setProfile((p) => (p ? { ...p, pib: e.target.value } : p))
+                  }
                   placeholder="123456789"
                 />
               </div>
@@ -202,7 +222,11 @@ export default function AccountPage() {
                 <Input
                   id="addr-street"
                   value={profile?.address ?? ""}
-                  onChange={(e) => setProfile((p) => (p ? { ...p, address: e.target.value } : p))}
+                  onChange={(e) =>
+                    setProfile((p) =>
+                      p ? { ...p, address: e.target.value } : p,
+                    )
+                  }
                   placeholder="Kneza Miloša 10"
                 />
               </div>
@@ -212,7 +236,11 @@ export default function AccountPage() {
                   <Input
                     id="addr-city"
                     value={profile?.city ?? ""}
-                    onChange={(e) => setProfile((p) => (p ? { ...p, city: e.target.value } : p))}
+                    onChange={(e) =>
+                      setProfile((p) =>
+                        p ? { ...p, city: e.target.value } : p,
+                      )
+                    }
                     placeholder="Beograd"
                   />
                 </div>
@@ -222,7 +250,11 @@ export default function AccountPage() {
                     id="phone"
                     type="tel"
                     value={profile?.phone ?? ""}
-                    onChange={(e) => setProfile((p) => (p ? { ...p, phone: e.target.value } : p))}
+                    onChange={(e) =>
+                      setProfile((p) =>
+                        p ? { ...p, phone: e.target.value } : p,
+                      )
+                    }
                     placeholder="+381 60 123 4567"
                   />
                 </div>
@@ -232,7 +264,11 @@ export default function AccountPage() {
                 <Input
                   id="contact-name"
                   value={profile?.contactName ?? ""}
-                  onChange={(e) => setProfile((p) => (p ? { ...p, contactName: e.target.value } : p))}
+                  onChange={(e) =>
+                    setProfile((p) =>
+                      p ? { ...p, contactName: e.target.value } : p,
+                    )
+                  }
                   placeholder="Petar Petrović"
                 />
               </div>
@@ -248,35 +284,46 @@ export default function AccountPage() {
           <Card>
             <CardHeader>
               <CardTitle>{t("account.ordersTitle")}</CardTitle>
-              <CardDescription>{t("account.ordersSubtitle")}</CardDescription>
+              <CardDescription className="space-y-1">
+                <span className="block">{t("account.ordersSubtitle")}</span>
+                <span className="block text-muted-foreground/90 text-sm">
+                  {t("account.ordersSubtitleHint")}
+                </span>
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {orders.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
-                    {locale === "en" ? "You have no orders." : "Nemate porudžbina."}
+                    {locale === "en"
+                      ? "You have no orders."
+                      : "Nemate porudžbina."}
                   </p>
                 ) : (
                   orders.map((order) => (
                     <div key={order.id}>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-semibold">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold truncate">
                             {typeof order.orderNumber === "number"
-                              ? `${t("account.orderLabel")} ${order.orderNumber}.`
+                              ? `${t("account.orderLabel")} #${order.orderNumber}`
                               : `${t("account.orderLabel")} #${order.id}`}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {new Date(order.createdAt).toLocaleString("sr-RS")}{" "}
-                            • {order.itemsCount} {order.itemsCount === 1 ? t("product") : t("products")}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            ID: {order.id}
+                            {order.createdAt
+                              ? new Date(order.createdAt).toLocaleString(
+                                  "sr-RS",
+                                )
+                              : "—"}{" "}
+                            • {order.itemsCount}{" "}
+                            {order.itemsCount === 1
+                              ? t("product")
+                              : t("products")}
                           </p>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right flex-shrink-0">
                           <p className="font-bold">
-                            {order.total.toFixed(2)} RSD
+                            {(order.total ?? 0).toFixed(2)} RSD
                           </p>
                           <Button
                             variant="outline"
@@ -291,7 +338,10 @@ export default function AccountPage() {
                                     ts: Date.now(),
                                   }),
                                 );
-                                sessionStorage.setItem("account.activeTab", activeTab);
+                                sessionStorage.setItem(
+                                  "account.activeTab",
+                                  activeTab,
+                                );
                               }
                               router.push(`/account/orders/${order.id}`);
                             }}

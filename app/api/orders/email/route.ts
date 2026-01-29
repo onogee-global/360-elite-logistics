@@ -7,6 +7,7 @@ export async function POST(req: Request) {
     // Accepts both our strict shape and a lenient one with 'name' fields
     const {
       orderId,
+      orderNumber,
       customerName,
       customerEmail,
       customerPhone,
@@ -22,6 +23,7 @@ export async function POST(req: Request) {
       items,
     }: {
       orderId: string
+      orderNumber?: number | null
       customerName?: string | null
       customerEmail?: string | null
       customerPhone: string
@@ -59,6 +61,7 @@ export async function POST(req: Request) {
 
     const result = await sendOrderEmail({
       orderId,
+      orderNumber: orderNumber ?? null,
       customerName: customerName ?? null,
       customerEmail: customerEmail ?? null,
       customerPhone,

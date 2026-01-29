@@ -180,7 +180,7 @@ export default function CheckoutPage() {
       const deliveryComputed = amountWithVatComputed >= 5000 ? 0 : 840;
       const totalWithVat = amountWithVatComputed + deliveryComputed;
 
-      const { orderId } = await createOrder({
+      const { orderId, orderNumber } = await createOrder({
         userId: user.id,
         customerName: formData.name,
         customerEmail: formData.email,
@@ -208,6 +208,7 @@ export default function CheckoutPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             orderId,
+            orderNumber: orderNumber ?? null,
             customerName: formData.name,
             customerEmail: formData.email,
             customerPhone: normalizedPhone,
@@ -238,6 +239,7 @@ export default function CheckoutPage() {
             "Order email send failed:",
             (emailJson as { error?: string })?.error ?? emailRes.statusText,
           );
+          const disp = typeof orderNumber === "number" ? String(orderNumber) : orderId;
           toast({
             title:
               locale === "en"
@@ -246,39 +248,37 @@ export default function CheckoutPage() {
             description:
               locale === "en"
                 ? "Order #" +
-                  orderId +
+                  disp +
                   " was saved. If you don't receive the confirmation email, contact us."
                 : "Porudžbina #" +
-                  orderId +
+                  disp +
                   " je sačuvana. Ako ne primate email, kontaktirajte nas.",
             variant: "destructive",
           });
         }
       } catch (_e) {
+        const disp = typeof orderNumber === "number" ? String(orderNumber) : orderId;
         toast({
           title: locale === "en" ? "Order placed" : "Porudžbina primljena",
           description:
             locale === "en"
-              ? "Confirmation email could not be sent. Order #" +
-                orderId +
-                " was saved."
-              : "Email potvrde nije poslat. Porudžbina #" +
-                orderId +
-                " je sačuvana.",
+              ? "Confirmation email could not be sent. Order #" + disp + " was saved."
+              : "Email potvrde nije poslat. Porudžbina #" + disp + " je sačuvana.",
           variant: "destructive",
         });
       }
 
+      const disp = typeof orderNumber === "number" ? String(orderNumber) : orderId;
       clearCart();
       toast({
         title: locale === "en" ? "Order successful!" : "Porudžbina uspešna!",
         description: emailSent
           ? locale === "en"
-            ? `Order #${orderId} received. A copy was sent to ${formData.email}.`
-            : `Porudžbina #${orderId} je primljena. Kopija je poslata na ${formData.email}.`
+            ? `Order #${disp} received. A copy was sent to ${formData.email}.`
+            : `Porudžbina #${disp} je primljena. Kopija je poslata na ${formData.email}.`
           : locale === "en"
-            ? `Order #${orderId} received.`
-            : `Vaša porudžbina #${orderId} je primljena.`,
+            ? `Order #${disp} received.`
+            : `Vaša porudžbina #${disp} je primljena.`,
       });
       router.push(`/checkout/success?orderId=${orderId}`);
     } catch (err: any) {

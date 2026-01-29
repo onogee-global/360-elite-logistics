@@ -1,41 +1,41 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useSearchParams } from "next/navigation"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { CheckCircle2, Package, Home } from "lucide-react"
-import { useLocale } from "@/lib/locale-context"
-import { fetchOrderDetail } from "@/lib/supabase"
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { CheckCircle2, Package, Home } from "lucide-react";
+import { useLocale } from "@/lib/locale-context";
+import { fetchOrderDetail } from "@/lib/supabase";
 
 export default function CheckoutSuccessPage() {
-  const searchParams = useSearchParams()
-  const orderId = searchParams.get("orderId") || "N/A"
-  const { t, locale } = useLocale()
-  const [displayOrderNumber, setDisplayOrderNumber] = useState<string>("")
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get("orderId") || "N/A";
+  const { t, locale } = useLocale();
+  const [displayOrderNumber, setDisplayOrderNumber] = useState<string>("");
 
   useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      if (!orderId || orderId === "N/A") return
+    let cancelled = false;
+    (async () => {
+      if (!orderId || orderId === "N/A") return;
       try {
-        const detail = await fetchOrderDetail(orderId)
+        const detail = await fetchOrderDetail(orderId);
         if (!cancelled) {
           if (detail?.orderNumber) {
-            setDisplayOrderNumber(String(detail.orderNumber))
+            setDisplayOrderNumber(String(detail.orderNumber));
           } else {
-            setDisplayOrderNumber(orderId)
+            setDisplayOrderNumber(orderId);
           }
         }
       } catch {
-        if (!cancelled) setDisplayOrderNumber(orderId)
+        if (!cancelled) setDisplayOrderNumber(orderId);
       }
-    })()
+    })();
     return () => {
-      cancelled = true
-    }
-  }, [orderId])
+      cancelled = true;
+    };
+  }, [orderId]);
 
   return (
     <div className="container mx-auto px-4 py-16">
@@ -48,12 +48,21 @@ export default function CheckoutSuccessPage() {
           </div>
 
           <h1 className="text-3xl font-bold mb-4">{t("orderSuccess")}</h1>
-          <p className="text-muted-foreground mb-8">{t("orderSuccessMessage")}</p>
+          <p className="text-muted-foreground mb-8">
+            {t("orderSuccessMessage")}
+          </p>
 
           <div className="bg-muted rounded-lg p-6 mb-8">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Package className="h-5 w-5 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">{t("orderNumber")}</span>
+            <div className="flex flex-col items-center gap-1 mb-2">
+              <div className="flex items-center justify-center gap-2">
+                <Package className="h-5 w-5 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">
+                  {t("orderNumber")}
+                </span>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {t("orderNumberHint")}
+              </span>
             </div>
             <p className="text-2xl font-bold">{displayOrderNumber || "…"}</p>
           </div>
@@ -65,7 +74,9 @@ export default function CheckoutSuccessPage() {
               </div>
               <div>
                 <h3 className="font-semibold mb-1">
-                  {locale === "en" ? "Order confirmation" : "Potvrda porudžbine"}
+                  {locale === "en"
+                    ? "Order confirmation"
+                    : "Potvrda porudžbine"}
                 </h3>
                 <p className="text-sm text-muted-foreground">
                   {locale === "en"
@@ -81,7 +92,9 @@ export default function CheckoutSuccessPage() {
               </div>
               <div>
                 <h3 className="font-semibold mb-1">
-                  {locale === "en" ? "Order preparation" : "Priprema porudžbine"}
+                  {locale === "en"
+                    ? "Order preparation"
+                    : "Priprema porudžbine"}
                 </h3>
                 <p className="text-sm text-muted-foreground">
                   {locale === "en"
@@ -116,11 +129,13 @@ export default function CheckoutSuccessPage() {
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
-              <Link href="/products">{locale === "en" ? "Continue shopping" : "Nastavi kupovinu"}</Link>
+              <Link href="/products">
+                {locale === "en" ? "Continue shopping" : "Nastavi kupovinu"}
+              </Link>
             </Button>
           </div>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
