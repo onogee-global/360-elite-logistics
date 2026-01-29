@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
+import Image from "next/image";
 import { useLocale } from "@/lib/locale-context";
 
 export default function EmployeeMealsPage() {
@@ -142,13 +143,13 @@ export default function EmployeeMealsPage() {
     return (
       <section className="relative py-16">
         <div className="text-center mb-8">
-          <div className="inline-block rounded-full px-6 py-2 bg-foreground text-background text-sm font-semibold shadow-sm">
+          <div className="inline-block rounded-full px-6 py-2 bg-white/15 text-white text-sm font-semibold shadow-sm ring-1 ring-white/20">
             {titleBadge}
           </div>
           <h2 className="mt-6 text-3xl md:text-4xl font-bold tracking-wide">
             {titleLine}
           </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-2 text-sm text-white/80">
             {locale === "en"
               ? "Minimum order size 6 meals"
               : "Minimalan broj obroka 6"}
@@ -161,25 +162,25 @@ export default function EmployeeMealsPage() {
             return (
               <div
                 key={dk}
-                className="rounded-2xl p-[1px] bg-gradient-to-br from-primary/25 to-accent/25"
+                className="rounded-2xl p-[1px] bg-gradient-to-br from-white/10 to-white/5"
               >
-                <Card className="rounded-2xl border bg-card h-full">
+                <Card className="rounded-2xl h-full border-white/15 bg-white/5 backdrop-blur">
                   <CardContent className="p-5">
-                    <h3 className="text-lg md:text-xl font-bold mb-3">
+                    <h3 className="text-lg md:text-xl font-bold mb-3 text-white">
                       {dayLabel}
                     </h3>
                     <div className="space-y-4 text-sm leading-relaxed">
                       <div>
-                        <p className="font-semibold underline underline-offset-4">
+                        <p className="font-semibold tracking-wide text-white/90">
                           {locale === "en" ? "LUNCH" : "RUČAK"}
                         </p>
-                        <p className="text-muted-foreground">{item.lunch}</p>
+                        <p className="text-white/85">{item.lunch}</p>
                       </div>
                       <div>
-                        <p className="font-semibold underline underline-offset-4">
+                        <p className="font-semibold tracking-wide text-white/90">
                           {locale === "en" ? "SNACK" : "UŽINA"}
                         </p>
-                        <p className="text-muted-foreground">{item.snack}</p>
+                        <p className="text-white/85">{item.snack}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -193,24 +194,61 @@ export default function EmployeeMealsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/10">
-      <div className="container mx-auto px-4 py-12">
-        <div className="max-w-5xl mx-auto text-center mb-12">
-          <h1 className="text-3xl md:text-5xl font-bold tracking-tight">
-            {locale === "en" ? "Employee Meals" : "Obroci za zaposlene"}
-          </h1>
-          {/* <p className="mt-4 text-base md:text-lg text-muted-foreground">
-            {locale === "en"
-              ? "Flexible, reliable daily meal supply for your team. We tailor options to your company’s needs."
-              : "Fleksibilna i pouzdana isporuka obroka za vaš tim. Prilagođavamo ponudu potrebama vaše kompanije."}
-          </p> */}
-          <p className="mt-4 text-sm md:text-base text-muted-foreground">
-            {locale === "en"
-              ? "We provide employees with fresh, tasty, and nutritionally balanced meals adapted to everyday work demands. Our meals are prepared with quality ingredients, paying attention to variety and proper nutrition. Regular and reliable delivery enables companies to provide their teams with a quality meal and more energy throughout the workday."
-              : "Zaposlenima obezbeđujemo sveže, ukusne i nutritivno izbalansirane obroke prilagođene svakodnevnim radnim obavezama. Naši obroci se pripremaju od kvalitetnih namirnica, uz pažnju na raznovrsnost i pravilnu ishranu. Redovna i pouzdana isporuka omogućava firmama da svojim timovima obezbede kvalitetan obrok i veću energiju tokom radnog dana."}
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-cyan-700 via-teal-700 to-cyan-800 text-white">
+      {/* Intro with white text and images */}
+      <div className="relative overflow-hidden">
+        <div className="container mx-auto px-4 py-12 md:py-16">
+          <div className="max-w-5xl mx-auto text-center text-white">
+            <h1 className="text-3xl md:text-5xl font-bold tracking-tight">
+              {locale === "en" ? "Employee Meals" : "Obroci za zaposlene"}
+            </h1>
+            <p className="mt-4 text-base md:text-lg/7 text-white/90">
+              {locale === "en"
+                ? "Flexible, reliable daily meal supply for your team. We tailor options to your company’s needs."
+                : "Fleksibilna i pouzdana isporuka obroka za vaš tim. Prilagođavamo ponudu potrebama vaše kompanije."}
+            </p>
+            <p className="mt-3 text-sm md:text-base/7 text-white/85">
+              {locale === "en"
+                ? "We provide employees with fresh, tasty, and nutritionally balanced meals adapted to everyday work demands. Our meals are prepared with quality ingredients, paying attention to variety and proper nutrition. Regular and reliable delivery enables companies to provide their teams with a quality meal and more energy throughout the workday."
+                : "Zaposlenima obezbeđujemo sveže, ukusne i nutritivno izbalansirane obroke prilagođene svakodnevnim radnim obavezama. Naši obroci se pripremaju od kvalitetnih namirnica, uz pažnju na raznovrsnost i pravilnu ishranu. Redovna i pouzdana isporuka omogućava firmama da svojim timovima obezbede kvalitetan obrok i veću energiju tokom radnog dana."}
+            </p>
+            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                {
+                  src: "/employee-meals/piletina-kikiriki.jpeg",
+                  altSr: "Piletina u kikiriki sosu",
+                  altEn: "Chicken in peanut sauce",
+                },
+                {
+                  src: "/employee-meals/irish-stew.jpeg",
+                  altSr: "Airiš gulaš",
+                  altEn: "Irish stew",
+                },
+                {
+                  src: "/employee-meals/sous-vide-piletina.jpeg",
+                  altSr: "Suvidirane pileće grudi sa dva pirea",
+                  altEn: "Sous‑vide chicken with two purees",
+                },
+              ].map((img) => (
+                <div
+                  key={img.src}
+                  className="relative h-56 w-full overflow-hidden rounded-xl ring-1 ring-white/20"
+                >
+                  <Image
+                    src={img.src}
+                    alt={locale === "en" ? img.altEn : img.altSr}
+                    fill
+                    className="object-cover"
+                    sizes="(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
+      </div>
 
+      <div className="container mx-auto px-4 py-12">
         <Section
           titleBadge={
             locale === "en"
@@ -234,12 +272,12 @@ export default function EmployeeMealsPage() {
         />
 
         <div className="max-w-5xl mx-auto mt-16 grid md:grid-cols-3 gap-4">
-          <Card>
+          <Card className="border-white/15 bg-white/5 backdrop-blur">
             <CardContent className="p-6">
-              <h3 className="font-semibold mb-2">
+              <h3 className="font-semibold mb-2 text-white">
                 {locale === "en" ? "Benefits" : "Prednosti"}
               </h3>
-              <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
+              <ul className="text-sm text-white/85 space-y-1 list-disc pl-4">
                 <li>
                   {locale === "en"
                     ? "Simple monthly invoicing"
@@ -254,12 +292,12 @@ export default function EmployeeMealsPage() {
               </ul>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-white/15 bg-white/5 backdrop-blur">
             <CardContent className="p-6">
-              <h3 className="font-semibold mb-2">
+              <h3 className="font-semibold mb-2 text-white">
                 {locale === "en" ? "How it works" : "Kako funkcioniše"}
               </h3>
-              <ol className="text-sm text-muted-foreground space-y-1 list-decimal pl-4">
+              <ol className="text-sm text-white/85 space-y-1 list-decimal pl-4">
                 <li>{locale === "en" ? "Contact us" : "Kontaktirajte nas"}</li>
                 <li>
                   {locale === "en" ? "We prepare a plan" : "Pripremamo plan"}
@@ -272,12 +310,12 @@ export default function EmployeeMealsPage() {
               </ol>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-white/15 bg-white/5 backdrop-blur">
             <CardContent className="p-6">
-              <h3 className="font-semibold mb-2">
+              <h3 className="font-semibold mb-2 text-white">
                 {locale === "en" ? "Contact" : "Kontakt"}
               </h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-white/85">
                 {locale === "en"
                   ? "Write to 360elitelogistic@gmail.com or use the contact page."
                   : "Pišite na 360elitelogistic@gmail.com ili koristite stranicu za kontakt."}
