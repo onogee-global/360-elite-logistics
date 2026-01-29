@@ -88,7 +88,7 @@ export const translations = {
 
     // Hero section translations
     "hero.badge": "Brza dostava širom Srbije",
-    "hero.title": "Kupujte namirnice online",
+    "hero.title": "Sve što vašoj firmi treba – na jednom mestu.",
     "hero.subtitle": "Partner u snabdevanju vašeg poslovanja",
     "hero.cta": "Počni kupovinu",
     "hero.ctaSecondary": "Pogledaj akcije",
@@ -102,6 +102,7 @@ export const translations = {
     "featured.title": "Akcijska ponuda",
     "featured.subtitle": "Najbolje cene samo za vas",
     "featured.viewAll": "Vidi sve",
+    "featured.empty": "Trenutno nema specijalnih ponuda. Pogledajte kompletnu ponudu proizvoda.",
 
     // Common
     search: "Pretraži proizvode...",
@@ -237,25 +238,27 @@ export const translations = {
 
     // About page
     "about.title": "O nama",
-    "about.subtitle": "360logistics je vaš pouzdan partner za online kupovinu namirnica i brzu dostavu širom Srbije.",
+    "about.subtitle": "Pouzdan partner za snabdevanje firmi hranom i pićem – olakšavamo poslovanje i unapređujemo radno okruženje.",
     "about.stat1": "Proizvoda",
     "about.stat2": "Zadovoljnih kupaca",
     "about.stat3": "Dostava dnevno",
     "about.storyTitle": "Naša priča",
     "about.story1":
-      "360logistics je osnovan sa vizijom da revolucionira način na koji ljudi kupuju namirnice. Verujemo da kupovina treba da bude jednostavna, brza i pristupačna svima.",
+      "Mi smo pouzdan partner u snabdevanju firmi kvalitetnom hranom i pićem, sa jasnim ciljem da svakodnevno olakšamo poslovanje naših klijenata i unapredimo njihovo radno okruženje. Specijalizovani smo za isporuku raznovrsnih prehrambenih proizvoda, napitaka i svežih, ukusnih dnevnih obroka namenjenih zaposlenima.",
     "about.story2":
-      "Naš tim stručnjaka radi svakodnevno kako bi vam pružio najbolje iskustvo online kupovine. Od pažljivo odabranih proizvoda do brze dostave, sve što radimo je fokusirano na vaše zadovoljstvo.",
+      "Naš pristup se zasniva na kvalitetu, pouzdanosti i fleksibilnosti. Pažljivo biramo sastojke i dobavljače, vodimo računa o standardima bezbednosti hrane i prilagođavamo se potrebama svake firme – bilo da je reč o malim timovima ili velikim kolektivima. Razumemo koliko je važno da obroci budu ukusni, nutritivno izbalansirani i isporučeni na vreme.",
     "about.story3":
-      "Danas smo ponosni što služimo hiljade zadovoljnih kupaca širom Srbije, dostavljajući sveže i kvalitetne proizvode direktno na njihova vrata.",
+      "Kroz profesionalnu uslugu, doslednost i posvećenost detaljima, gradimo dugoročna partnerstva sa našim klijentima. Verujemo da kvalitetna hrana doprinosi produktivnosti, zadovoljstvu zaposlenih i boljoj atmosferi na radnom mestu – a upravo to je ono što svakodnevno isporučujemo.",
     "about.valuesTitle": "Naše vrednosti",
     "about.value1.title": "Kvalitet",
     "about.value1.desc":
-      "Biramo samo najbolje proizvode od proverenih dobavljača kako bismo garantovali vrhunski kvalitet.",
+      "Kvalitet je temelj svega što radimo – od pažljivog izbora namirnica i proverenih dobavljača, do stroge kontrole pripreme i isporuke. Svaki obrok i proizvod mora ispuniti visoke standarde svežine, ukusa i bezbednosti. Doslednim kvalitetom gradimo poverenje i dugoročne odnose sa našim klijentima.",
     "about.value2.title": "Pouzdanost",
-    "about.value2.desc": "Dostavljamo na vreme, svaki put. Vaše poverenje je naša najveća vrednost.",
+    "about.value2.desc":
+      "Poštujemo dogovore i rokove, jer znamo koliko je pouzdana isporuka važna za nesmetano poslovanje. Naši klijenti mogu da računaju na tačnost, kontinuitet i profesionalnu uslugu svakog dana. Pouzdanost je vrednost na kojoj gradimo dugoročnu saradnju.",
     "about.value3.title": "Zadovoljstvo kupaca",
-    "about.value3.desc": "Vaše zadovoljstvo je naš prioritet. Tu smo da vam pomognemo u svakom trenutku.",
+    "about.value3.desc":
+      "Zadovoljstvo naših kupaca je uvek na prvom mestu i predstavlja merilo našeg uspeha. Pažljivo slušamo potrebe klijenata i prilagođavamo našu ponudu kako bismo ispunili njihova očekivanja. Dugoročna saradnja i pozitivne preporuke potvrđuju kvalitet naše usluge.",
 
     // Delivery page
     "delivery.title": "Dostava",
@@ -385,7 +388,7 @@ export const translations = {
 
     // Hero section translations
     "hero.badge": "Fast delivery across Serbia",
-    "hero.title": "Shop groceries online",
+    "hero.title": "Everything your business needs — in one place.",
     "hero.subtitle": "Partner in supplying your business",
     "hero.cta": "Start shopping",
     "hero.ctaSecondary": "View deals",
@@ -399,6 +402,7 @@ export const translations = {
     "featured.title": "Special offers",
     "featured.subtitle": "Best prices just for you",
     "featured.viewAll": "View all",
+    "featured.empty": "No special offers at the moment. Check all products.",
 
     // Common
     search: "Search products...",
@@ -535,24 +539,27 @@ export const translations = {
     // About page
     "about.title": "About Us",
     "about.subtitle":
-      "360logistics is your trusted partner for online grocery shopping and fast delivery across Serbia.",
+      "A reliable partner supplying companies with quality food and beverages—making operations easier and workplaces better.",
     "about.stat1": "Products",
     "about.stat2": "Happy Customers",
     "about.stat3": "Daily Deliveries",
     "about.storyTitle": "Our Story",
     "about.story1":
-      "360logistics was founded with a vision to revolutionize the way people shop for groceries. We believe shopping should be simple, fast, and accessible to everyone.",
+      "We are a reliable partner supplying companies with quality food and beverages, with a clear goal to simplify our clients’ operations every day and improve their work environment. We specialize in delivering a wide range of groceries, drinks, and fresh, delicious daily meals for employees.",
     "about.story2":
-      "Our team of experts works daily to provide you with the best online shopping experience. From carefully selected products to fast delivery, everything we do is focused on your satisfaction.",
+      "Our approach is based on quality, reliability, and flexibility. We carefully select ingredients and suppliers, follow food safety standards, and adapt to the needs of every company—whether small teams or large organizations. We understand how important it is for meals to be tasty, nutritionally balanced, and delivered on time.",
     "about.story3":
-      "Today we are proud to serve thousands of satisfied customers across Serbia, delivering fresh and quality products directly to their doors.",
+      "Through professional service, consistency, and attention to detail, we build long‑term partnerships with our clients. We believe that quality food contributes to productivity, employee satisfaction, and a better workplace atmosphere—and that is exactly what we deliver every day.",
     "about.valuesTitle": "Our Values",
     "about.value1.title": "Quality",
-    "about.value1.desc": "We select only the best products from verified suppliers to guarantee top quality.",
+    "about.value1.desc":
+      "Quality is the foundation of everything we do—from carefully selecting ingredients and vetted suppliers to strict control of preparation and delivery. Every meal and product must meet high standards of freshness, taste, and safety. Through consistent quality we build trust and long‑term relationships with our clients.",
     "about.value2.title": "Reliability",
-    "about.value2.desc": "We deliver on time, every time. Your trust is our greatest value.",
+    "about.value2.desc":
+      "We keep our agreements and deadlines because reliable delivery is crucial for smooth operations. Our clients can rely on accuracy, continuity, and professional service every day. Reliability is the value on which we build long‑term cooperation.",
     "about.value3.title": "Customer Satisfaction",
-    "about.value3.desc": "Your satisfaction is our priority. We're here to help you at any time.",
+    "about.value3.desc":
+      "Customer satisfaction is always our top priority and the measure of our success. We listen carefully to our clients’ needs and adapt our offering to meet their expectations. Long‑term partnerships and positive referrals confirm the quality of our service.",
 
     // Delivery page
     "delivery.title": "Delivery",

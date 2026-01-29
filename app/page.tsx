@@ -20,8 +20,14 @@ export default function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [cursor, setCursor] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [parallax, setParallax] = useState<{ px: number; py: number }>({ px: 0, py: 0 });
+  const [cursor, setCursor] = useState<{ x: number; y: number }>({
+    x: 0,
+    y: 0,
+  });
+  const [parallax, setParallax] = useState<{ px: number; py: number }>({
+    px: 0,
+    py: 0,
+  });
   const [pulse, setPulse] = useState(0);
   const [tapCategoryId, setTapCategoryId] = useState<string | null>(null);
 
@@ -48,11 +54,21 @@ export default function HomePage() {
 
   // Special offers: list base discounted products and discounted variations; order by highest discount
   const featuredOffers = useMemo(() => {
-    type Entry = { product: Product; promoVariationId?: string; isVariation: boolean; discountPct: number };
+    type Entry = {
+      product: Product;
+      promoVariationId?: string;
+      isVariation: boolean;
+      discountPct: number;
+    };
     const list: Entry[] = [];
     for (const p of products) {
       // base product discount with valid base price
-      if (typeof p.discount === "number" && p.discount > 0 && typeof p.price === "number" && p.price > 0) {
+      if (
+        typeof p.discount === "number" &&
+        p.discount > 0 &&
+        typeof p.price === "number" &&
+        p.price > 0
+      ) {
         list.push({ product: p, isVariation: false, discountPct: p.discount });
       }
       // discounted variations
@@ -60,7 +76,12 @@ export default function HomePage() {
       for (const v of vars) {
         const vd = (v as any)?.discount as number | undefined;
         if (typeof vd === "number" && vd > 0) {
-          list.push({ product: p, promoVariationId: v.id, isVariation: true, discountPct: vd });
+          list.push({
+            product: p,
+            promoVariationId: v.id,
+            isVariation: true,
+            discountPct: vd,
+          });
         }
       }
     }
@@ -73,7 +94,9 @@ export default function HomePage() {
       <div
         className="relative overflow-hidden"
         onMouseMove={(e) => {
-          const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+          const rect = (
+            e.currentTarget as HTMLDivElement
+          ).getBoundingClientRect();
           const cx = e.clientX - rect.left;
           const cy = e.clientY - rect.top;
           setCursor({ x: cx, y: cy });
@@ -97,22 +120,28 @@ export default function HomePage() {
         <motion.div
           aria-hidden
           className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full blur-3xl"
-          style={{
-            background: "linear-gradient(135deg, rgba(70,150,255,0.35), rgba(180,220,255,0.28))",
-            x: parallax.px * 24,
-            y: parallax.py * -18,
-          } as any}
+          style={
+            {
+              background:
+                "linear-gradient(135deg, rgba(70,150,255,0.35), rgba(180,220,255,0.28))",
+              x: parallax.px * 24,
+              y: parallax.py * -18,
+            } as any
+          }
           animate={{ opacity: [0.55, 0.75, 0.6, 0.55] }}
           transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
           aria-hidden
           className="pointer-events-none absolute -bottom-28 -right-28 h-80 w-80 rounded-full blur-3xl"
-          style={{
-            background: "linear-gradient(135deg, rgba(120,190,255,0.32), rgba(60,120,230,0.28))",
-            x: parallax.px * -20,
-            y: parallax.py * 16,
-          } as any}
+          style={
+            {
+              background:
+                "linear-gradient(135deg, rgba(120,190,255,0.32), rgba(60,120,230,0.28))",
+              x: parallax.px * -20,
+              y: parallax.py * 16,
+            } as any
+          }
           animate={{ opacity: [0.5, 0.7, 0.6, 0.5] }}
           transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
         />
@@ -121,7 +150,12 @@ export default function HomePage() {
           key={`pulse-${pulse}`}
           aria-hidden
           className="pointer-events-none absolute -z-10"
-          style={{ left: cursor.x, top: cursor.y, translateX: "-50%", translateY: "-50%" }}
+          style={{
+            left: cursor.x,
+            top: cursor.y,
+            translateX: "-50%",
+            translateY: "-50%",
+          }}
           initial={{ opacity: 0.35, scale: 0.6, rotate: 0 }}
           animate={{ opacity: 0, scale: 1.4, rotate: 12 }}
           transition={{ duration: 1.6, ease: "easeOut" }}
@@ -184,12 +218,14 @@ export default function HomePage() {
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-transparent via-transparent to-background/10" />
         <div className="container mx-auto px-4 py-24 md:py-40">
           <motion.div
-            className="max-w-3xl mx-auto text-center will-change-transform"
-            style={{
-              rotateX: parallax.py * -3,
-              rotateY: parallax.px * 3,
-              transformPerspective: 900,
-            } as any}
+            className="max-w-5xl mx-auto text-center will-change-transform"
+            style={
+              {
+                rotateX: parallax.py * -3,
+                rotateY: parallax.px * 3,
+                transformPerspective: 900,
+              } as any
+            }
           >
             <motion.div
               initial={{ opacity: 0, y: -10 }}
@@ -248,7 +284,11 @@ export default function HomePage() {
                   show: { opacity: 1, y: 0 },
                 }}
               >
-                <Button size="lg" className="text-lg px-8 h-14 shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden" asChild>
+                <Button
+                  size="lg"
+                  className="text-lg px-8 h-14 shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden"
+                  asChild
+                >
                   <Link href="/products" className="group">
                     <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-120%] group-hover:translate-x-[120%] transition-transform duration-700" />
                     {t("hero.cta")}
@@ -262,7 +302,12 @@ export default function HomePage() {
                   show: { opacity: 1, y: 0 },
                 }}
               >
-                <Button size="lg" variant="outline" className="text-lg px-8 h-14 bg-transparent" asChild>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="text-lg px-8 h-14 bg-transparent"
+                  asChild
+                >
                   <Link href="/products?discount=true">
                     {t("hero.ctaSecondary")}
                   </Link>
@@ -295,7 +340,10 @@ export default function HomePage() {
                     // Show a quick ripple animation on mobile/small screens, then navigate
                     setTapCategoryId(category.id);
                     const to = `/products?categoryId=${category.id}`;
-                    if (typeof window !== "undefined" && window.innerWidth < 640) {
+                    if (
+                      typeof window !== "undefined" &&
+                      window.innerWidth < 640
+                    ) {
                       setTimeout(() => router.push(to), 180);
                     } else {
                       router.push(to);
@@ -309,7 +357,9 @@ export default function HomePage() {
                         <div className="relative h-12 w-12 md:h-14 md:w-14 mb-2 transform group-hover:scale-105 transition-transform">
                           <Image
                             src={category.image}
-                            alt={locale === "en" ? category.nameEn : category.name}
+                            alt={
+                              locale === "en" ? category.nameEn : category.name
+                            }
                             fill
                             className="object-contain"
                           />
@@ -358,25 +408,38 @@ export default function HomePage() {
               </Link>
             </Button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {featuredOffers.map(({ product, promoVariationId, isVariation }) => {
-              const cat = categories.find((c) => c.id === product.categoryId);
-              const catName = cat
-                ? locale === "en"
-                  ? cat.nameEn
-                  : cat.name
-                : undefined;
-              return (
-                <ProductCard
-                  key={`${product.id}-${promoVariationId ?? "base"}`}
-                  product={product}
-                  categoryName={catName}
-                  promoVariationId={promoVariationId}
-                  forceBaseDiscount={!isVariation}
-                />
-              );
-            })}
-          </div>
+          {featuredOffers.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {featuredOffers.map(
+                ({ product, promoVariationId, isVariation }) => {
+                  const cat = categories.find(
+                    (c) => c.id === product.categoryId,
+                  );
+                  const catName = cat
+                    ? locale === "en"
+                      ? cat.nameEn
+                      : cat.name
+                    : undefined;
+                  return (
+                    <ProductCard
+                      key={`${product.id}-${promoVariationId ?? "base"}`}
+                      product={product}
+                      categoryName={catName}
+                      promoVariationId={promoVariationId}
+                      forceBaseDiscount={!isVariation}
+                    />
+                  );
+                },
+              )}
+            </div>
+          ) : (
+            <div className="rounded-xl border bg-card p-8 text-center text-muted-foreground">
+              <p className="mb-4">{t("featured.empty")}</p>
+              <Button asChild>
+                <Link href="/products">{t("hero.cta")}</Link>
+              </Button>
+            </div>
+          )}
         </section>
       </div>
     </div>
