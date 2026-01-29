@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -23,18 +29,32 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+
+    const sync = async () => {
       try {
-        const { data } = await supabase.auth.getUser();
-        if (!cancelled) {
-          setHasSession(!!data.user);
-        }
+        // 1) session check (bolje od getUser za recovery)
+        const { data } = await supabase.auth.getSession();
+        if (!cancelled) setHasSession(!!data.session);
+
+        // 2) listen for auth changes (kad Supabase “pokupi” token iz URL-a)
+        const { data: sub } = supabase.auth.onAuthStateChange(
+          (_event, session) => {
+            if (!cancelled) setHasSession(!!session);
+          },
+        );
+
+        return () => sub.subscription.unsubscribe();
       } finally {
         if (!cancelled) setChecking(false);
       }
-    })();
+    };
+
+    let cleanup: any;
+    sync().then((c) => (cleanup = c));
+
     return () => {
       cancelled = true;
+      if (cleanup) cleanup();
     };
   }, []);
 
@@ -57,13 +77,18 @@ export default function ResetPasswordPage() {
       if (error) throw error;
       toast({
         title: locale === "en" ? "Password updated" : "Lozinka ažurirana",
-        description: locale === "en" ? "You can now log in." : "Sada možete da se prijavite.",
+        description:
+          locale === "en"
+            ? "You can now log in."
+            : "Sada možete da se prijavite.",
       });
       router.push("/login");
     } catch (err: any) {
       toast({
         title: locale === "en" ? "Update failed" : "Ažuriranje neuspešno",
-        description: err?.message || (locale === "en" ? "Try again later" : "Pokušajte ponovo kasnije"),
+        description:
+          err?.message ||
+          (locale === "en" ? "Try again later" : "Pokušajte ponovo kasnije"),
         variant: "destructive",
       });
     } finally {
@@ -77,22 +102,26 @@ export default function ResetPasswordPage() {
     <div className="container mx-auto px-4 py-16">
       <Card className="max-w-md mx-auto">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">{locale === "en" ? "Reset password" : "Reset lozinke"}</CardTitle>
+          <CardTitle className="text-2xl">
+            {locale === "en" ? "Reset password" : "Reset lozinke"}
+          </CardTitle>
           <CardDescription>
             {hasSession
               ? locale === "en"
                 ? "Enter your new password below."
                 : "Unesite novu lozinku."
               : locale === "en"
-              ? "Open this page from the recovery email link to reset your password."
-              : "Otvorite ovu stranicu iz linka za oporavak iz emaila da biste resetovali lozinku."}
+                ? "Open this page from the recovery email link to reset your password."
+                : "Otvorite ovu stranicu iz linka za oporavak iz emaila da biste resetovali lozinku."}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {hasSession ? (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="password">{locale === "en" ? "New password" : "Nova lozinka"}</Label>
+                <Label htmlFor="password">
+                  {locale === "en" ? "New password" : "Nova lozinka"}
+                </Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
@@ -107,7 +136,9 @@ export default function ResetPasswordPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirm">{locale === "en" ? "Confirm password" : "Potvrdite lozinku"}</Label>
+                <Label htmlFor="confirm">
+                  {locale === "en" ? "Confirm password" : "Potvrdite lozinku"}
+                </Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
@@ -122,16 +153,32 @@ export default function ResetPasswordPage() {
                 </div>
               </div>
               <Button disabled={submitting} className="w-full" type="submit">
-                {submitting ? (locale === "en" ? "Saving..." : "Čuvanje...") : locale === "en" ? "Save password" : "Sačuvaj lozinku"}
+                {submitting
+                  ? locale === "en"
+                    ? "Saving..."
+                    : "Čuvanje..."
+                  : locale === "en"
+                    ? "Save password"
+                    : "Sačuvaj lozinku"}
               </Button>
-              <Button variant="outline" className="w-full" type="button" onClick={() => router.push("/login")}>
+              <Button
+                variant="outline"
+                className="w-full"
+                type="button"
+                onClick={() => router.push("/login")}
+              >
                 {locale === "en" ? "Back to login" : "Nazad na prijavu"}
               </Button>
             </form>
           ) : (
             <div className="text-center">
-              <Button variant="outline" onClick={() => router.push("/forgot-password")}>
-                {locale === "en" ? "Request new reset link" : "Zatraži novi link"}
+              <Button
+                variant="outline"
+                onClick={() => router.push("/forgot-password")}
+              >
+                {locale === "en"
+                  ? "Request new reset link"
+                  : "Zatraži novi link"}
               </Button>
             </div>
           )}
@@ -140,5 +187,3 @@ export default function ResetPasswordPage() {
     </div>
   );
 }
-
-
