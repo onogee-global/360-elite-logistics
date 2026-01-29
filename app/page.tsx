@@ -11,7 +11,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { useLocale } from "@/lib/locale-context";
 import type { Category, Product } from "@/lib/types";
 import { fetchCategories, fetchProductsWithVariations } from "@/lib/supabase";
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import Reveal from "@/components/reveal";
 
 export default function HomePage() {
@@ -24,11 +24,18 @@ export default function HomePage() {
     x: 0,
     y: 0,
   });
-  const [parallax, setParallax] = useState<{ px: number; py: number }>({
-    px: 0,
-    py: 0,
-  });
-  const [pulse, setPulse] = useState(0);
+  // Parallax: smooth spring so it never snaps or "restarts" on enter/leave
+  const parallaxX = useMotionValue(0);
+  const parallaxY = useMotionValue(0);
+  const springConfig = { stiffness: 20, damping: 22 };
+  const springX = useSpring(parallaxX, springConfig);
+  const springY = useSpring(parallaxY, springConfig);
+  const glow1X = useTransform(springX, (v) => v * 24);
+  const glow1Y = useTransform(springY, (v) => v * -18);
+  const glow2X = useTransform(springX, (v) => v * -20);
+  const glow2Y = useTransform(springY, (v) => v * 16);
+  const tiltRotateX = useTransform(springY, (v) => v * -3);
+  const tiltRotateY = useTransform(springX, (v) => v * 3);
   const [tapCategoryId, setTapCategoryId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -100,13 +107,16 @@ export default function HomePage() {
           const cx = e.clientX - rect.left;
           const cy = e.clientY - rect.top;
           setCursor({ x: cx, y: cy });
-          setPulse((p) => (p + 1) % 10000);
-          // normalized center-based parallax (-1..1)
+          // normalized center-based parallax (-1..1); spring will smooth toward this
           const nx = (cx / rect.width) * 2 - 1;
           const ny = (cy / rect.height) * 2 - 1;
-          setParallax({ px: nx, py: ny });
+          parallaxX.set(nx);
+          parallaxY.set(ny);
         }}
-        onMouseLeave={() => setParallax({ px: 0, py: 0 })}
+        onMouseLeave={() => {
+          parallaxX.set(0);
+          parallaxY.set(0);
+        }}
       >
         {/* Hero background inspired by new logo (lighter cool blues) */}
         <div
@@ -120,34 +130,29 @@ export default function HomePage() {
         <motion.div
           aria-hidden
           className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full blur-3xl"
-          style={
-            {
-              background:
-                "linear-gradient(135deg, rgba(70,150,255,0.35), rgba(180,220,255,0.28))",
-              x: parallax.px * 24,
-              y: parallax.py * -18,
-            } as any
-          }
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(70,150,255,0.35), rgba(180,220,255,0.28))",
+            x: glow1X,
+            y: glow1Y,
+          }}
           animate={{ opacity: [0.55, 0.75, 0.6, 0.55] }}
-          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+          transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
           aria-hidden
           className="pointer-events-none absolute -bottom-28 -right-28 h-80 w-80 rounded-full blur-3xl"
-          style={
-            {
-              background:
-                "linear-gradient(135deg, rgba(120,190,255,0.32), rgba(60,120,230,0.28))",
-              x: parallax.px * -20,
-              y: parallax.py * 16,
-            } as any
-          }
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(120,190,255,0.32), rgba(60,120,230,0.28))",
+            x: glow2X,
+            y: glow2Y,
+          }}
           animate={{ opacity: [0.5, 0.7, 0.6, 0.5] }}
-          transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
+          transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
         />
-        {/* Interactive ripple pulses at cursor (colorful, not just a circle) */}
+        {/* Single ripple at cursor: continuous loop so it never restarts on move */}
         <motion.div
-          key={`pulse-${pulse}`}
           aria-hidden
           className="pointer-events-none absolute -z-10"
           style={{
@@ -156,9 +161,16 @@ export default function HomePage() {
             translateX: "-50%",
             translateY: "-50%",
           }}
-          initial={{ opacity: 0.35, scale: 0.6, rotate: 0 }}
-          animate={{ opacity: 0, scale: 1.4, rotate: 12 }}
-          transition={{ duration: 1.6, ease: "easeOut" }}
+          animate={{
+            opacity: [0.15, 0.35, 0.15],
+            scale: [0.7, 1.2, 0.7],
+            rotate: [0, 12, 0],
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
         >
           <div
             className="relative"
@@ -219,13 +231,11 @@ export default function HomePage() {
         <div className="container mx-auto px-4 py-24 md:py-40">
           <motion.div
             className="max-w-5xl mx-auto text-center will-change-transform"
-            style={
-              {
-                rotateX: parallax.py * -3,
-                rotateY: parallax.px * 3,
-                transformPerspective: 900,
-              } as any
-            }
+            style={{
+              rotateX: tiltRotateX,
+              rotateY: tiltRotateY,
+              transformPerspective: 900,
+            }}
           >
             <motion.div
               initial={{ opacity: 0, y: -10 }}
