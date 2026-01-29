@@ -28,6 +28,7 @@ export async function POST(req: Request) {
     } = body
 
     if (!orderId || !Array.isArray(items)) {
+      console.warn("[orders/email] Invalid payload:", { hasOrderId: !!orderId, itemsIsArray: Array.isArray(items) })
       return NextResponse.json({ ok: false, error: "Invalid payload" }, { status: 400 })
     }
 
@@ -45,8 +46,12 @@ export async function POST(req: Request) {
       total: Number(total),
       items: normalizedItems,
     })
+    if (!result.ok) {
+      console.error("[orders/email] sendOrderEmail failed:", result.error, { orderId })
+    }
     return NextResponse.json(result, { status: result.ok ? 200 : 500 })
   } catch (e: any) {
+    console.error("[orders/email] Exception:", e?.message ?? e, { stack: (e as Error)?.stack })
     return NextResponse.json({ ok: false, error: e?.message ?? "Unknown error" }, { status: 500 })
   }
 }

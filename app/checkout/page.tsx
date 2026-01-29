@@ -118,8 +118,11 @@ export default function CheckoutPage() {
     try {
       // Basic SR phone normalization/validation
       const rawPhone = (formData.phone || "").replace(/\s+/g, "");
-      const normalizedPhone =
-        rawPhone.startsWith("+") ? rawPhone : rawPhone.startsWith("0") ? `+381${rawPhone.slice(1)}` : rawPhone;
+      const normalizedPhone = rawPhone.startsWith("+")
+        ? rawPhone
+        : rawPhone.startsWith("0")
+          ? `+381${rawPhone.slice(1)}`
+          : rawPhone;
       const phoneValid = /^(\+3816\d{7,8}|06\d{7,8})$/.test(normalizedPhone);
       if (!phoneValid) {
         setPhoneError("invalid");
@@ -160,7 +163,7 @@ export default function CheckoutPage() {
 
       const subtotalComputed = orderItems.reduce(
         (sum, it) => sum + it.unitPrice * it.quantity,
-        0
+        0,
       );
       const pdvComputed = subtotalComputed * 0.2;
       const deliveryComputed = subtotalComputed >= 5000 ? 0 : 800;
@@ -186,7 +189,8 @@ export default function CheckoutPage() {
       // Mark as placed to prevent cart redirect guard
       setOrderPlaced(true);
 
-      // Send order email via Resend (non-blocking)
+      // Send order email to business (and optionally CC customer)
+      let emailSent = false;
       try {
         const emailRes = await fetch("/api/orders/email", {
           method: "POST",
@@ -197,28 +201,64 @@ export default function CheckoutPage() {
             customerPhone: normalizedPhone,
             total: totalWithVat,
             items: orderItems.map((it) => ({
-              name: it.name,
-              variationName: it.variationName,
+              productName: it.name,
+              variationName: it.variationName ?? null,
               quantity: it.quantity,
               unitPrice: it.unitPrice,
             })),
           }),
         });
-        const emailJson = await emailRes.json().catch(() => ({}) as any);
-        if (!emailRes.ok || (emailJson && emailJson.ok === false)) {
+        const emailJson = await emailRes
+          .json()
+          .catch(() => ({}) as Record<string, unknown>);
+        emailSent =
+          emailRes.ok && (emailJson as { ok?: boolean })?.ok !== false;
+        if (!emailSent) {
           console.warn(
             "Order email send failed:",
-            emailJson?.error ?? emailRes.statusText
+            (emailJson as { error?: string })?.error ?? emailRes.statusText,
           );
+          toast({
+            title:
+              locale === "en"
+                ? "Order placed, email may have failed"
+                : "Porudžbina primljena, email možda nije poslat",
+            description:
+              locale === "en"
+                ? "Order #" +
+                  orderId +
+                  " was saved. If you don't receive the confirmation email, contact us."
+                : "Porudžbina #" +
+                  orderId +
+                  " je sačuvana. Ako ne primate email, kontaktirajte nas.",
+            variant: "destructive",
+          });
         }
-      } catch {
-        // ignore email errors
+      } catch (_e) {
+        toast({
+          title: locale === "en" ? "Order placed" : "Porudžbina primljena",
+          description:
+            locale === "en"
+              ? "Confirmation email could not be sent. Order #" +
+                orderId +
+                " was saved."
+              : "Email potvrde nije poslat. Porudžbina #" +
+                orderId +
+                " je sačuvana.",
+          variant: "destructive",
+        });
       }
 
       clearCart();
       toast({
-        title: "Porudžbina uspešna!",
-        description: `Vaša porudžbina #${orderId} je primljena.`,
+        title: locale === "en" ? "Order successful!" : "Porudžbina uspešna!",
+        description: emailSent
+          ? locale === "en"
+            ? `Order #${orderId} received. A copy was sent to ${formData.email}.`
+            : `Porudžbina #${orderId} je primljena. Kopija je poslata na ${formData.email}.`
+          : locale === "en"
+            ? `Order #${orderId} received.`
+            : `Vaša porudžbina #${orderId} je primljena.`,
       });
       router.push(`/checkout/success?orderId=${orderId}`);
     } catch (err: any) {
@@ -234,7 +274,9 @@ export default function CheckoutPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">{t("checkoutTitle")}</h1>
+      <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">
+        {t("checkoutTitle")}
+      </h1>
 
       <form onSubmit={handleSubmit}>
         <div className="grid lg:grid-cols-3 gap-6 md:gap-8">
@@ -258,7 +300,9 @@ export default function CheckoutPage() {
                       value={formData.name}
                       onChange={handleInputChange}
                       required
-                      placeholder={locale === "en" ? "John Doe" : "Petar Petrović"}
+                      placeholder={
+                        locale === "en" ? "John Doe" : "Petar Petrović"
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -276,7 +320,8 @@ export default function CheckoutPage() {
                     />
                     {phoneError && (
                       <p className="text-xs text-destructive">
-                        {t("phoneInvalid") ?? "Unesite ispravan broj telefona (npr. +381601234567)"}
+                        {t("phoneInvalid") ??
+                          "Unesite ispravan broj telefona (npr. +381601234567)"}
                       </p>
                     )}
                   </div>
@@ -303,7 +348,11 @@ export default function CheckoutPage() {
                     value={formData.address}
                     onChange={handleInputChange}
                     required
-                    placeholder={locale === "en" ? "King Alexander Blvd 10" : "Kneza Miloša 10"}
+                    placeholder={
+                      locale === "en"
+                        ? "King Alexander Blvd 10"
+                        : "Kneza Miloša 10"
+                    }
                   />
                 </div>
 
@@ -320,7 +369,9 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="zip">{t("zip") ?? "Poštanski broj"} *</Label>
+                    <Label htmlFor="zip">
+                      {t("zip") ?? "Poštanski broj"} *
+                    </Label>
                     <Input
                       id="zip"
                       name="zip"
@@ -353,15 +404,16 @@ export default function CheckoutPage() {
                     const isBaseItem = item.variation.id.startsWith("base-");
                     const basePrice = item.variation.price;
                     const variationDiscount =
-                      !isBaseItem && typeof (item.variation as any)?.discount === "number"
+                      !isBaseItem &&
+                      typeof (item.variation as any)?.discount === "number"
                         ? ((item.variation as any).discount as number)
                         : 0;
                     const finalPrice =
                       isBaseItem && item.product.discount
                         ? basePrice * (1 - (item.product.discount ?? 0) / 100)
                         : variationDiscount > 0
-                        ? basePrice * (1 - variationDiscount / 100)
-                        : basePrice;
+                          ? basePrice * (1 - variationDiscount / 100)
+                          : basePrice;
 
                     const productName =
                       locale === "en" ? item.product.nameEn : item.product.name;
@@ -410,17 +462,25 @@ export default function CheckoutPage() {
                 {/* Price Breakdown */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{t("subtotal")}</span>
-                    <span className="font-medium">{subtotal.toFixed(2)} RSD</span>
+                    <span className="text-muted-foreground">
+                      {t("subtotal")}
+                    </span>
+                    <span className="font-medium">
+                      {subtotal.toFixed(2)} RSD
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">{t("vat20")}</span>
                     <span className="font-medium">{pdv.toFixed(2)} RSD</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{t("cart.delivery")}</span>
+                    <span className="text-muted-foreground">
+                      {t("cart.delivery")}
+                    </span>
                     <span className="font-medium">
-                      {deliveryFee === 0 ? t("cart.free") : `${deliveryFee.toFixed(2)} RSD`}
+                      {deliveryFee === 0
+                        ? t("cart.free")
+                        : `${deliveryFee.toFixed(2)} RSD`}
                     </span>
                   </div>
                 </div>
@@ -444,7 +504,9 @@ export default function CheckoutPage() {
                   className="w-full"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? (t("processing") ?? "Processing...") : t("placeOrder")}
+                  {isSubmitting
+                    ? (t("processing") ?? "Processing...")
+                    : t("placeOrder")}
                 </Button>
 
                 <p className="text-xs text-muted-foreground text-center">

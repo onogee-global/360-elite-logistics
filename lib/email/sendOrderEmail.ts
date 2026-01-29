@@ -62,9 +62,10 @@ export async function sendOrderEmail(input: SendOrderEmailInput): Promise<SendOr
   const fromEmail = process.env.ORDER_EMAIL_FROM || "onboarding@resend.dev"
 
   if (!apiKey) {
-    console.warn("RESEND_API_KEY is not set; skipping email send")
+    console.warn("[sendOrderEmail] RESEND_API_KEY is not set; skipping")
     return { ok: false, error: "RESEND_API_KEY not configured" }
   }
+  console.log("[sendOrderEmail] Sending", { orderId: input.orderId, to: toEmail, from: fromEmail })
 
 const resend = new Resend(apiKey)
 
@@ -103,16 +104,26 @@ const resend = new Resend(apiKey)
     if (process.env.ORDER_EMAIL_CC_CUSTOMER === "true" && input.customerEmail) {
       recipients.push(input.customerEmail)
     }
+    // Resend returns { data: { id }, error } – check error and use data.id
     const response = await resend.emails.send({
       from: fromEmail,
       to: recipients,
       subject,
       html,
     })
-    return { ok: true, id: (response as any)?.id }
+    const resendError = (response as { error?: { message?: string } })?.error
+    if (resendError) {
+      const msg = resendError.message ?? "Resend returned an error"
+      console.error("[sendOrderEmail] Resend error:", msg, { orderId: input.orderId, to: recipients, from: fromEmail })
+      return { ok: false, error: msg }
+    }
+    const id = (response as { data?: { id?: string } })?.data?.id
+    console.log("[sendOrderEmail] Sent successfully", { orderId: input.orderId, to: recipients, from: fromEmail, resendId: id })
+    return { ok: true, id: id ?? undefined }
   } catch (e: any) {
-    console.error("sendOrderEmail failed:", e?.message || e)
-    return { ok: false, error: e?.message ?? "Unknown error" }
+    const msg = e?.message ?? "Unknown error"
+    console.error("[sendOrderEmail] Exception:", msg, { orderId: input.orderId, to: toEmail, from: fromEmail })
+    return { ok: false, error: msg }
   }
 }
 
