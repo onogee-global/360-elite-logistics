@@ -87,22 +87,24 @@ const resend = new Resend(apiKey)
 
   const itemsHtml = buildItemsHtml(input.items)
 
-  // Prikaz cene: međuzbir, eventualno promo, osnovica za PDV, PDV, dostava, ukupno
+  // Prikaz cene: međuzbir → promo (samo od osnovice) → osnovica za PDV → PDV → troškovi isporuke → ukupno
   const subtotal = input.subtotal ?? input.total / 1.2
   const promoAmount = input.promoDiscountAmount ?? 0
   const taxable = Math.max(0, subtotal - promoAmount)
   const pdv = taxable * 0.2
   const deliveryAmount = input.deliveryAmount ?? 0
   const hasPromo = !!(input.promoCode && promoAmount > 0)
+  const deliveryLabel = deliveryAmount > 0 ? formatCurrencyRSD(deliveryAmount) : "Besplatno"
 
   const totalHtml = `
     <div style="margin:12px 0 0 0;font-size:16px">
       <p style="margin:4px 0"><strong>Međuzbir:</strong> ${formatCurrencyRSD(subtotal)}</p>
-      ${hasPromo ? `<p style="margin:4px 0"><strong>Promo (${input.promoCode}):</strong> <span style="color:#16a34a">-${formatCurrencyRSD(promoAmount)}</span></p>` : ""}
-      ${hasPromo ? `<p style="margin:4px 0"><strong>Osnovica za PDV:</strong> ${formatCurrencyRSD(taxable)}</p>` : ""}
+      ${hasPromo ? `<p style="margin:4px 0"><strong>Popust (${input.promoCode}):</strong> <span style="color:#16a34a">-${formatCurrencyRSD(promoAmount)}</span></p>` : ""}
+      ${hasPromo ? `<p style="margin:4px 0"><strong>Osnovica za PDV (posle popusta):</strong> ${formatCurrencyRSD(taxable)}</p>` : ""}
       <p style="margin:4px 0"><strong>PDV 20%:</strong> ${formatCurrencyRSD(pdv)}</p>
-      ${deliveryAmount > 0 ? `<p style="margin:4px 0"><strong>Dostava:</strong> ${formatCurrencyRSD(deliveryAmount)}</p>` : ""}
-      <p style="margin:8px 0 0 0"><strong>Ukupno:</strong> ${formatCurrencyRSD(input.total)}</p>
+      <p style="margin:4px 0"><strong>Troškovi isporuke:</strong> ${deliveryLabel}</p>
+      <p style="margin:4px 0;font-size:13px;color:#64748b">Besplatna dostava za porudžbine preko 5.000 RSD (sa PDV-om)</p>
+      <p style="margin:12px 0 0 0;font-size:18px;font-weight:bold;color:#2563eb"><strong>Ukupno:</strong> ${formatCurrencyRSD(input.total)}</p>
     </div>
   `
 
