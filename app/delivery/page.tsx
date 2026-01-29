@@ -97,7 +97,7 @@ export default function DeliveryPage() {
         </div>
 
         {/* Delivery Zones */}
-        <div className="max-w-4xl mx-auto mb-20">
+        {/* <div className="max-w-4xl mx-auto mb-20">
           <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">
             {t("delivery.zonesTitle")}
           </h2>
@@ -127,7 +127,7 @@ export default function DeliveryPage() {
               </Card>
             ))}
           </div>
-        </div>
+        </div> */}
 
         {/* Additional Info */}
         <Card className="max-w-4xl mx-auto p-8 bg-gradient-to-br from-primary/5 to-accent/5">
@@ -137,10 +137,10 @@ export default function DeliveryPage() {
               <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
               <span>{t("delivery.info1")}</span>
             </li>
-            <li className="flex items-start gap-3">
+            {/* <li className="flex items-start gap-3">
               <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
               <span>{t("delivery.info2")}</span>
-            </li>
+            </li> */}
             <li className="flex items-start gap-3">
               <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
               <span>{t("delivery.info3")}</span>

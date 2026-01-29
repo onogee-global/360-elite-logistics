@@ -107,7 +107,9 @@ export function Header() {
   }, []);
 
   return (
-    <header className={`sticky top-0 z-50 w-full border-b ${scrolled ? "backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-sm" : "bg-background"}`}>
+    <header
+      className={`sticky top-0 z-50 w-full border-b ${scrolled ? "backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-sm" : "bg-background"}`}
+    >
       <div className="bg-gradient-to-r from-primary via-accent to-primary text-primary-foreground">
         <motion.div
           initial={{ opacity: 0, y: -8 }}
@@ -115,8 +117,8 @@ export function Header() {
           transition={{ duration: 0.35, ease: "easeOut" }}
           className="container mx-auto px-4 py-2"
         >
-          <div className="flex items-center justify-between md:justify-between gap-4 text-xs md:text-sm overflow-x-auto scrollbar-hide">
-            <p className="whitespace-nowrap">
+          <div className="flex items-center justify-between md:justify-between gap-4 text-xs md:text-sm overflow-x-auto scrollbar-hide h-2">
+            {/* <p className="whitespace-nowrap">
               {locale === "sr"
                 ? "Dostava u vreme koje odaberete"
                 : "Delivery at your chosen time"}
@@ -130,7 +132,7 @@ export function Header() {
               {locale === "sr"
                 ? "Donosimo teške artikle do tvojih vrata"
                 : "We bring heavy items to your door"}
-            </p>
+            </p> */}
           </div>
         </motion.div>
       </div>
@@ -259,7 +261,11 @@ export function Header() {
           </Sheet>
 
           {/* Logo */}
-          <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: "easeOut" }}>
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          >
             <Link href="/" className="flex items-center gap-2">
               <Image
                 src="/brand/logo.png"

@@ -287,7 +287,7 @@ export const translations = {
     "delivery.info1": "Besplatna dostava za narudžbine preko 5.000 RSD",
     "delivery.info2": "Možete izabrati željeno vreme dostave prilikom naručivanja",
     "delivery.info3": "Naš tim će vas kontaktirati telefonom pre dostave",
-    "delivery.info4": "Prihvatamo gotovinu i kartice prilikom dostave",
+    "delivery.info4": "Prihvatamo gotovinu prilikom dostave",
 
     // Contact page
     "contact.title": "Kontaktirajte nas",
@@ -588,7 +588,7 @@ export const translations = {
     "delivery.info1": "Free delivery for orders over 5,000 RSD",
     "delivery.info2": "You can choose your preferred delivery time when ordering",
     "delivery.info3": "Our team will contact you by phone before delivery",
-    "delivery.info4": "We accept cash and cards upon delivery",
+    "delivery.info4": "We accept cash upon delivery",
 
     // Contact page
     "contact.title": "Contact Us",
