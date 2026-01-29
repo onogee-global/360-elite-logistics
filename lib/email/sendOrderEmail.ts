@@ -58,8 +58,9 @@ function buildItemsHtml(items: OrderEmailItem[]): string {
 export async function sendOrderEmail(input: SendOrderEmailInput): Promise<SendOrderEmailResult> {
   const apiKey = process.env.RESEND_API_KEY
   const toEmail = process.env.ORDER_EMAIL_TO || "360elitelogistic@gmail.com"
-  // Use a verified sender. For local/testing, Resend allows onboarding@resend.dev.
-  const fromEmail = process.env.ORDER_EMAIL_FROM || "onboarding@resend.dev"
+  // Resend free tier: you can only send TO your own account email until you verify a domain.
+  // FROM must be onboarding@resend.dev (testing) or an address on a verified domain (resend.com/domains).
+  const fromEmail = process.env.ORDER_PRODUCTS_EMAIL_FROM || "onboarding@resend.dev"
 
   if (!apiKey) {
     console.warn("[sendOrderEmail] RESEND_API_KEY is not set; skipping")
