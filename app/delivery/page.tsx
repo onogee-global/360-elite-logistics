@@ -145,10 +145,10 @@ export default function DeliveryPage() {
               <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
               <span>{t("delivery.info3")}</span>
             </li>
-            <li className="flex items-start gap-3">
+            {/* <li className="flex items-start gap-3">
               <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
               <span>{t("delivery.info4")}</span>
-            </li>
+            </li> */}
           </ul>
         </Card>
       </div>
