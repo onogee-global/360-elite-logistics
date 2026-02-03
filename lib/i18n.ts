@@ -187,6 +187,10 @@ export const translations = {
     "account.ordersSubtitleHint": "Broj porudžbine je redni po vašem nalogu (1, 2, 3…).",
     "account.showDetails": "Prikaži detalje",
     "account.orderLabel": "Porudžbina",
+    "account.orderNotFound": "Porudžbina nije pronađena",
+    "account.backToAccount": "Nazad na nalog",
+    "account.repeatOrder": "Ponovi porudžbinu",
+    "account.orderCreated": "Kreirano",
 
     // Product card translations
     "product.addedToCart": "Dodato u korpu",
@@ -490,6 +494,10 @@ export const translations = {
     "account.ordersSubtitleHint": "Order number is sequential for your account (1, 2, 3…).",
     "account.showDetails": "View details",
     "account.orderLabel": "Order",
+    "account.orderNotFound": "Order not found",
+    "account.backToAccount": "Back to account",
+    "account.repeatOrder": "Repeat order",
+    "account.orderCreated": "Created",
 
     // Product card translations
     "product.addedToCart": "Added to cart",

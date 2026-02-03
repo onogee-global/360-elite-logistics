@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { useCartStore } from "@/lib/cart-store";
+import { useLocale } from "@/lib/locale-context";
 
 export default function OrderDetailPage({
   params,
@@ -20,6 +21,7 @@ export default function OrderDetailPage({
   const { id } = usePromise(params);
   const addItem = useCartStore((s) => s.addItem);
   const clearCart = useCartStore((s) => s.clearCart);
+  const { locale, t } = useLocale();
 
   useEffect(() => {
     let cancelled = false;
@@ -59,7 +61,9 @@ export default function OrderDetailPage({
         // Find or synthesize variation
         let variation: any = null;
         if (variationId && !String(variationId).startsWith("base-")) {
-          variation = (product.variations ?? []).find((v) => v.id === variationId) ?? null;
+          variation =
+            (product.variations ?? []).find((v) => v.id === variationId) ??
+            null;
         } else {
           variation = {
             id: `base-${product.id}`,
@@ -94,11 +98,11 @@ export default function OrderDetailPage({
       <div className="container mx-auto px-4 py-8">
         <Card>
           <CardHeader>
-            <CardTitle>Porudžbina nije pronađena</CardTitle>
+            <CardTitle>{t("account.orderNotFound")}</CardTitle>
           </CardHeader>
           <CardContent>
             <Button asChild>
-              <Link href="/account">Nazad na nalog</Link>
+              <Link href="/account">{t("account.backToAccount")}</Link>
             </Button>
           </CardContent>
         </Card>
@@ -106,27 +110,32 @@ export default function OrderDetailPage({
     );
   }
 
+  const dateLocale = locale === "sr" ? "sr-RS" : "en-GB";
+  const orderTitle =
+    typeof order.orderNumber === "number"
+      ? `${t("account.orderLabel")} #${order.orderNumber}`
+      : `${t("account.orderLabel")} #${order.id}`;
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl md:text-3xl font-bold">
-          {typeof order.orderNumber === "number"
-            ? `Porudžbina #${order.orderNumber}`
-            : `Porudžbina #${order.id}`}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <h1 className="min-w-0 text-xl font-bold leading-tight sm:text-2xl md:text-3xl">
+          {orderTitle}
         </h1>
-        <div className="flex gap-2">
+        <div className="flex shrink-0 gap-2">
           <Button variant="outline" onClick={handleRepeatOrder}>
-            Ponovi porudžbinu
+            {t("account.repeatOrder")}
           </Button>
           <Button asChild variant="outline">
-            <Link href="/account">Nazad</Link>
+            <Link href="/account">{t("back")}</Link>
           </Button>
         </div>
       </div>
       <Card>
         <CardHeader>
           <CardTitle>
-            Kreirano: {new Date(order.createdAt).toLocaleString("sr-RS")}
+            {t("account.orderCreated")}:{" "}
+            {new Date(order.createdAt).toLocaleString(dateLocale)}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -144,16 +153,16 @@ export default function OrderDetailPage({
                     {it.quantity} × {it.unitPrice.toFixed(2)} RSD
                   </p>
                 </div>
-                <div className="font-semibold whitespace-nowrap">
+                <div className="font-semibold whitespace-nowrap shrink-0">
                   {(it.quantity * it.unitPrice).toFixed(2)} RSD
                 </div>
               </div>
             ))}
           </div>
           <Separator className="my-4" />
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-semibold">Ukupno</span>
-            <span className="text-xl font-bold">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-lg font-semibold">{t("total")}</span>
+            <span className="text-xl font-bold shrink-0">
               {order.total.toFixed(2)} RSD
             </span>
           </div>
