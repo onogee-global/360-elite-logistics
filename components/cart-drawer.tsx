@@ -82,7 +82,7 @@ export function CartDrawer() {
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-lg flex flex-col p-0 gap-0">
+      <SheetContent className="w-full sm:max-w-lg flex flex-col p-0 gap-0 overflow-hidden max-w-[100vw]">
         <SheetHeader className="px-6 py-5 border-b bg-gradient-to-r from-primary/5 to-accent/5">
           <SheetTitle className="text-2xl font-bold flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -132,10 +132,10 @@ export function CartDrawer() {
         ) : (
           <>
             <ScrollArea
-              className="flex-1 px-6"
+              className="flex-1 px-4 sm:px-6 overflow-x-hidden"
               style={{ maxHeight: "calc(100vh - 280px)" }}
             >
-              <div className="space-y-3 py-6">
+              <div className="space-y-3 py-6 min-w-0">
                 {items.map((item, index) => {
                   const isBaseItem = item.variation.id.startsWith("base-");
                   const basePrice = item.variation.price;
@@ -177,10 +177,10 @@ export function CartDrawer() {
                   return (
                     <div
                       key={item.variation.id}
-                      className="flex gap-4 p-4 rounded-xl border bg-card hover:shadow-md transition-all duration-300 animate-in fade-in slide-in-from-right"
+                      className="flex gap-2 sm:gap-4 p-3 sm:p-4 rounded-xl border bg-card hover:shadow-md transition-all duration-300 animate-in fade-in slide-in-from-right min-w-0 overflow-hidden"
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
-                      <div className="relative h-20 w-20 flex-shrink-0 rounded-lg overflow-hidden bg-muted ring-1 ring-border">
+                      <div className="relative h-16 w-16 sm:h-20 sm:w-20 flex-shrink-0 rounded-lg overflow-hidden bg-muted ring-1 ring-border">
                         <Image
                           src={
                             item.variation.imageUrl ||
@@ -301,7 +301,7 @@ export function CartDrawer() {
                                   }));
                                 }
                               }}
-                              className="min-w-[5.5rem] w-24 h-8 text-center text-sm font-bold border-0 focus-visible:ring-0 tabular-nums"
+                              className="min-w-[3.5rem] w-14 sm:min-w-[5.5rem] sm:w-24 h-8 text-center text-sm font-bold border-0 focus-visible:ring-0 tabular-nums"
                             />
                             <Button
                               variant="ghost"
@@ -346,13 +346,18 @@ export function CartDrawer() {
                         </div>
                       </div>
 
-                      <div className="text-right flex flex-col justify-between">
-                        <div className="font-bold text-base text-primary">
+                      <div className="text-right flex flex-col justify-between flex-shrink-0 min-w-0 max-w-[35%] sm:max-w-none">
+                        <div
+                          className="font-bold text-xs sm:text-base text-primary whitespace-nowrap overflow-hidden text-ellipsis"
+                          title={`${(finalPrice * item.quantity).toFixed(
+                            2
+                          )} RSD`}
+                        >
                           {(finalPrice * item.quantity).toFixed(2)} RSD
                         </div>
                         {(isBaseItem && item.product.discount) ||
                         (!isBaseItem && variationDiscount > 0) ? (
-                          <div className="text-xs text-muted-foreground line-through">
+                          <div className="text-[10px] sm:text-xs text-muted-foreground line-through whitespace-nowrap overflow-hidden text-ellipsis">
                             {(basePrice * item.quantity).toFixed(2)} RSD
                           </div>
                         ) : null}
