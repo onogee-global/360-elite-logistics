@@ -110,7 +110,22 @@ export function CartDrawer() {
                 </p>
               </div>
               <Button asChild className="mt-4">
-                <Link href="/products">{t("shop")}</Link>
+                <Link
+                  href="/products"
+                  onClick={(e) => {
+                    setOpen(false);
+                    // On mobile (touch): close drawer first so it visibly closes, then navigate
+                    if (
+                      typeof window !== "undefined" &&
+                      window.matchMedia("(pointer: coarse)").matches
+                    ) {
+                      e.preventDefault();
+                      setTimeout(() => router.push("/products"), 150);
+                    }
+                  }}
+                >
+                  {t("shop")}
+                </Link>
               </Button>
             </div>
           </div>
@@ -134,8 +149,8 @@ export function CartDrawer() {
                     isBaseItem && item.product.discount
                       ? basePrice * (1 - (item.product.discount ?? 0) / 100)
                       : variationDiscount > 0
-                        ? basePrice * (1 - variationDiscount / 100)
-                        : basePrice;
+                      ? basePrice * (1 - variationDiscount / 100)
+                      : basePrice;
                   const productName =
                     locale === "sr" ? item.product.name : item.product.nameEn;
                   const variationName =
@@ -210,7 +225,7 @@ export function CartDrawer() {
                                   String(item.quantity);
                                 const current = Math.min(
                                   99999,
-                                  Math.max(1, parseInt(raw || "1", 10) || 1),
+                                  Math.max(1, parseInt(raw || "1", 10) || 1)
                                 );
                                 if (current <= 1) {
                                   removeItem(item.variation.id);
@@ -262,7 +277,7 @@ export function CartDrawer() {
                                   String(item.quantity);
                                 const next = Math.min(
                                   99999,
-                                  Math.max(1, parseInt(raw || "1", 10) || 1),
+                                  Math.max(1, parseInt(raw || "1", 10) || 1)
                                 );
                                 updateQuantity(item.variation.id, next);
                                 setQtyInputs((prev) => ({
@@ -277,7 +292,7 @@ export function CartDrawer() {
                                     String(item.quantity);
                                   const next = Math.min(
                                     99999,
-                                    Math.max(1, parseInt(raw || "1", 10) || 1),
+                                    Math.max(1, parseInt(raw || "1", 10) || 1)
                                   );
                                   updateQuantity(item.variation.id, next);
                                   setQtyInputs((prev) => ({
@@ -298,7 +313,7 @@ export function CartDrawer() {
                                   String(item.quantity);
                                 const current = Math.min(
                                   99999,
-                                  Math.max(1, parseInt(raw || "1", 10) || 1),
+                                  Math.max(1, parseInt(raw || "1", 10) || 1)
                                 );
                                 const next = Math.min(99999, current + 1);
                                 updateQuantity(item.variation.id, next);
