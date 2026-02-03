@@ -174,15 +174,15 @@ export function Header() {
             </SheetTrigger>
             <SheetContent
               side="left"
-              className="w-[300px] sm:w-[350px] p-0 flex flex-col"
+              className="w-[300px] sm:w-[350px] p-0 flex flex-col max-h-dvh h-dvh overflow-hidden pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] [&>button]:hidden"
             >
-              <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-primary/5 to-accent/5">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-lg shadow-md">
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b bg-gradient-to-r from-primary/5 to-accent/5 shrink-0">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-lg shadow-md">
                     360
                   </div>
-                  <div>
-                    <div className="font-bold text-lg leading-none">
+                  <div className="min-w-0">
+                    <div className="font-bold text-lg leading-none truncate">
                       <span className="text-primary">360</span>
                       <span className="text-accent">logistics</span>
                     </div>
@@ -194,14 +194,15 @@ export function Header() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-colors"
+                  className="h-9 w-9 shrink-0 hover:bg-destructive/10 hover:text-destructive transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
+                  aria-label={locale === "sr" ? "Zatvori meni" : "Close menu"}
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-5 w-5" />
                 </Button>
               </div>
 
-              <ScrollArea className="flex-1 px-4 py-6">
+              <ScrollArea className="flex-1 min-h-0 px-4 py-6">
                 <nav className="space-y-2">
                   {navLinks.map((link, index) => {
                     const Icon = link.icon;
@@ -220,7 +221,11 @@ export function Header() {
                                   delay: index * 0.05,
                                 },
                               }
-                            : { opacity: 0, x: -12, transition: { duration: 0.15 } }
+                            : {
+                                opacity: 0,
+                                x: -12,
+                                transition: { duration: 0.15 },
+                              }
                         }
                       >
                         <Link
@@ -231,7 +236,11 @@ export function Header() {
                           <motion.div
                             className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted group-hover:bg-primary/20 transition-colors"
                             whileHover={{ scale: 1.05 }}
-                            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                            transition={{
+                              type: "spring",
+                              stiffness: 400,
+                              damping: 25,
+                            }}
                           >
                             <Icon className="h-4 w-4" />
                           </motion.div>
