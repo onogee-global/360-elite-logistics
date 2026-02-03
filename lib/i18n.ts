@@ -298,7 +298,7 @@ export const translations = {
 
     // Contact page
     "contact.title": "Kontaktirajte nas",
-    "contact.subtitle": "Imате pitanja? Tu smo da vam pomognemo. Kontaktirajte nas putem forme ili direktno.",
+    "contact.subtitle": "Imаtе pitanja? Tu smo da vam pomognemo. Kontaktirajte nas putem forme ili direktno.",
     "contact.formTitle": "Pošaljite nam poruku",
     "contact.name": "Ime i prezime",
     "contact.emailLabel": "Email adresa",
