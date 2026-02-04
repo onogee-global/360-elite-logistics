@@ -184,7 +184,7 @@ export function Header() {
                   <div className="min-w-0">
                     <div className="font-bold text-lg leading-none truncate">
                       <span className="text-primary">360</span>
-                      <span className="text-accent">logistics</span>
+                      <span className="text-accent">logistic</span>
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
                       {locale === "sr" ? "Vaša prodavnica" : "Your store"}

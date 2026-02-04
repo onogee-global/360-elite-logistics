@@ -72,7 +72,11 @@ export default function LoginPage() {
         if (user) {
           const raw = localStorage.getItem("pendingProfile");
           if (raw) {
-            const pending = JSON.parse(raw) as { email?: string; companyName?: string; pib?: string };
+            const pending = JSON.parse(raw) as {
+              email?: string;
+              companyName?: string;
+              pib?: string;
+            };
             if (pending?.companyName || pending?.pib) {
               await upsertUserProfile({
                 userId: user.id,
@@ -101,7 +105,9 @@ export default function LoginPage() {
         title: locale === "en" ? "Login failed" : "Prijava neuspešna",
         description:
           err?.message ||
-          (locale === "en" ? "Check your details and try again" : "Proverite podatke i pokušajte ponovo"),
+          (locale === "en"
+            ? "Check your details and try again"
+            : "Proverite podatke i pokušajte ponovo"),
         variant: "destructive",
       });
     } finally {
@@ -116,7 +122,7 @@ export default function LoginPage() {
           <div className="flex justify-center mb-4">
             <Image
               src="/brand/logo.png"
-              alt="360 Logistics"
+              alt="360 Logistic"
               width={160}
               height={160}
               className="h-16 w-auto sm:h-20"
@@ -125,7 +131,9 @@ export default function LoginPage() {
           </div>
           <CardTitle className="text-2xl">{t("loginTitle")}</CardTitle>
           <CardDescription>
-            {locale === "en" ? "Sign in to your account" : "Prijavite se na vaš nalog"}
+            {locale === "en"
+              ? "Sign in to your account"
+              : "Prijavite se na vaš nalog"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -154,7 +162,9 @@ export default function LoginPage() {
                   href="/forgot-password"
                   className="text-sm text-primary hover:underline"
                 >
-                  {locale === "en" ? "Forgot password?" : "Zaboravili ste lozinku?"}
+                  {locale === "en"
+                    ? "Forgot password?"
+                    : "Zaboravili ste lozinku?"}
                 </Link>
               </div>
               <div className="relative">
@@ -179,7 +189,11 @@ export default function LoginPage() {
               disabled={isLoading}
             >
               <LogIn className="mr-2 h-4 w-4" />
-              {isLoading ? (locale === "en" ? "Signing in..." : "Prijava u toku...") : t("login")}
+              {isLoading
+                ? locale === "en"
+                  ? "Signing in..."
+                  : "Prijava u toku..."
+                : t("login")}
             </Button>
           </form>
 
@@ -191,7 +205,9 @@ export default function LoginPage() {
           </div>
 
           <div className="text-center text-sm">
-            <span className="text-muted-foreground">{locale === "en" ? "Don't have an account? " : "Nemate nalog? "}</span>
+            <span className="text-muted-foreground">
+              {locale === "en" ? "Don't have an account? " : "Nemate nalog? "}
+            </span>
             <Link
               href="/register"
               className="text-primary font-medium hover:underline"

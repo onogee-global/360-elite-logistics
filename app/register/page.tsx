@@ -23,7 +23,13 @@ import { getCurrentUser } from "../../lib/auth";
 import { supabase, upsertUserProfile } from "@/lib/supabase";
 import { useLocale } from "@/lib/locale-context";
 import Image from "next/image";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import TermsContent from "@/components/legal/TermsContent";
 import PrivacyContent from "@/components/legal/PrivacyContent";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -71,7 +77,9 @@ export default function RegisterPage() {
       toast({
         title: locale === "en" ? "Error" : "Greška",
         description:
-          locale === "en" ? "Passwords do not match" : "Lozinke se ne poklapaju",
+          locale === "en"
+            ? "Passwords do not match"
+            : "Lozinke se ne poklapaju",
         variant: "destructive",
       });
       return;
@@ -81,7 +89,9 @@ export default function RegisterPage() {
       toast({
         title: locale === "en" ? "Error" : "Greška",
         description:
-          locale === "en" ? "You must accept the terms" : "Morate prihvatiti uslove korišćenja",
+          locale === "en"
+            ? "You must accept the terms"
+            : "Morate prihvatiti uslove korišćenja",
         variant: "destructive",
       });
       return;
@@ -147,7 +157,7 @@ export default function RegisterPage() {
                 email: formData.email,
                 companyName: formData.name,
                 pib: rawPib,
-              }),
+              })
             );
           } catch {}
         }
@@ -155,7 +165,8 @@ export default function RegisterPage() {
         // ignore if session not yet available (email confirmation flows)
       }
       toast({
-        title: locale === "en" ? "Registration successful" : "Uspešna registracija",
+        title:
+          locale === "en" ? "Registration successful" : "Uspešna registracija",
         description:
           locale === "en" ? "Registration completed." : "Registracija uspešna.",
       });
@@ -163,9 +174,11 @@ export default function RegisterPage() {
       router.push(redirect || "/account");
     } catch (err: any) {
       toast({
-        title: locale === "en" ? "Registration failed" : "Registracija neuspešna",
+        title:
+          locale === "en" ? "Registration failed" : "Registracija neuspešna",
         description:
-          err?.message || (locale === "en" ? "Try again later" : "Pokušajte ponovo kasnije"),
+          err?.message ||
+          (locale === "en" ? "Try again later" : "Pokušajte ponovo kasnije"),
         variant: "destructive",
       });
     } finally {
@@ -180,7 +193,7 @@ export default function RegisterPage() {
           <div className="flex justify-center mb-4">
             <Image
               src="/brand/logo.png"
-              alt="360 Logistics"
+              alt="360 Logistic"
               width={160}
               height={160}
               className="h-16 w-auto sm:h-20"
@@ -202,7 +215,9 @@ export default function RegisterPage() {
                   id="name"
                   name="name"
                   type="text"
-                  placeholder={locale === "en" ? "Company name" : "Naziv kompanije"}
+                  placeholder={
+                    locale === "en" ? "Company name" : "Naziv kompanije"
+                  }
                   className="pl-10"
                   value={formData.name}
                   onChange={handleInputChange}
@@ -261,7 +276,9 @@ export default function RegisterPage() {
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                {locale === "en" ? "Minimum 8 characters" : "Minimum 8 karaktera"}
+                {locale === "en"
+                  ? "Minimum 8 characters"
+                  : "Minimum 8 karaktera"}
               </p>
             </div>
 
@@ -299,7 +316,10 @@ export default function RegisterPage() {
                 {locale === "en" ? "I accept the " : "Prihvatam "}
                 <Dialog>
                   <DialogTrigger asChild>
-                    <button type="button" className="text-primary hover:underline">
+                    <button
+                      type="button"
+                      className="text-primary hover:underline"
+                    >
                       {locale === "en" ? "terms of use" : "uslove korišćenja"}
                     </button>
                   </DialogTrigger>
@@ -307,7 +327,9 @@ export default function RegisterPage() {
                     <div className="px-6 py-5 bg-gradient-to-r from-primary/10 via-background to-accent/10">
                       <DialogHeader className="p-0">
                         <DialogTitle className="text-xl font-bold">
-                          {locale === "en" ? "Terms of Use" : "Uslovi korišćenja"}
+                          {locale === "en"
+                            ? "Terms of Use"
+                            : "Uslovi korišćenja"}
                         </DialogTitle>
                       </DialogHeader>
                       <p className="text-sm text-muted-foreground mt-1">
@@ -322,22 +344,31 @@ export default function RegisterPage() {
                       </div>
                     </ScrollArea>
                     <div className="px-6 py-4 border-t bg-background/60 text-xs text-muted-foreground">
-                      {locale === "en" ? "Last updated: 2026-01-05" : "Poslednje ažuriranje: 05.01.2026"}
+                      {locale === "en"
+                        ? "Last updated: 2026-01-05"
+                        : "Poslednje ažuriranje: 05.01.2026"}
                     </div>
                   </DialogContent>
                 </Dialog>
                 {locale === "en" ? " and " : " i "}
                 <Dialog>
                   <DialogTrigger asChild>
-                    <button type="button" className="text-primary hover:underline">
-                      {locale === "en" ? "privacy policy" : "politiku privatnosti"}
+                    <button
+                      type="button"
+                      className="text-primary hover:underline"
+                    >
+                      {locale === "en"
+                        ? "privacy policy"
+                        : "politiku privatnosti"}
                     </button>
                   </DialogTrigger>
                   <DialogContent className="w-[95vw] sm:max-w-5xl p-0 rounded-2xl border-2 bg-white dark:bg-card shadow-2xl overflow-hidden">
                     <div className="px-6 py-5 bg-gradient-to-r from-primary/10 via-background to-accent/10">
                       <DialogHeader className="p-0">
                         <DialogTitle className="text-xl font-bold">
-                          {locale === "en" ? "Privacy Policy" : "Politika privatnosti"}
+                          {locale === "en"
+                            ? "Privacy Policy"
+                            : "Politika privatnosti"}
                         </DialogTitle>
                       </DialogHeader>
                       <p className="text-sm text-muted-foreground mt-1">
@@ -352,7 +383,9 @@ export default function RegisterPage() {
                       </div>
                     </ScrollArea>
                     <div className="px-6 py-4 border-t bg-background/60 text-xs text-muted-foreground">
-                      {locale === "en" ? "Last updated: 2026-01-05" : "Poslednje ažuriranje: 05.01.2026"}
+                      {locale === "en"
+                        ? "Last updated: 2026-01-05"
+                        : "Poslednje ažuriranje: 05.01.2026"}
                     </div>
                   </DialogContent>
                 </Dialog>
@@ -366,7 +399,11 @@ export default function RegisterPage() {
               disabled={isLoading}
             >
               <UserPlus className="mr-2 h-4 w-4" />
-              {isLoading ? (locale === "en" ? "Signing up..." : "Registracija u toku...") : t("registerTitle")}
+              {isLoading
+                ? locale === "en"
+                  ? "Signing up..."
+                  : "Registracija u toku..."
+                : t("registerTitle")}
             </Button>
           </form>
 
@@ -379,7 +416,9 @@ export default function RegisterPage() {
 
           <div className="text-center text-sm">
             <span className="text-muted-foreground">
-              {locale === "en" ? "Already have an account? " : "Već imate nalog? "}
+              {locale === "en"
+                ? "Already have an account? "
+                : "Već imate nalog? "}
             </span>
             <Link
               href="/login"
