@@ -196,11 +196,21 @@ export default function ContactPage() {
               </div>
             </div>
 
-            {/* Map Placeholder */}
-            <Card className="p-6">
+            {/* Google Map */}
+            <Card className="p-6 overflow-hidden">
               <h3 className="font-bold mb-4">{t("contact.location")}</h3>
-              <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
-                <MapPin className="h-12 w-12 text-muted-foreground" />
+              <div className="aspect-video rounded-lg overflow-hidden border border-border">
+                <iframe
+                  title={t("contact.location")}
+                  src={`https://www.google.com/maps?q=${encodeURIComponent(t("contact.addressValue"))}&output=embed`}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="w-full h-full min-h-[240px]"
+                />
               </div>
             </Card>
           </div>

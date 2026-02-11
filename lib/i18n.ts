@@ -309,9 +309,9 @@ export const translations = {
     "contact.phone": "Telefon",
     "contact.email": "Email",
     "contact.address": "Adresa",
-    "contact.addressValue": "Bulevar kralja Aleksandra 123, Beograd",
+    "contact.addressValue": "Milutina Milankovića 1i, Navigator II",
     "contact.hours": "Radno vreme",
-    "contact.hoursValue": "Ponedeljak - Nedelja: 08:00 - 22:00",
+    "contact.hoursValue": "Ponedeljak - Petak: 09:00 - 17:00",
     "contact.location": "Naša lokacija",
   },
   en: {
@@ -617,9 +617,9 @@ export const translations = {
     "contact.phone": "Phone",
     "contact.email": "Email",
     "contact.address": "Address",
-    "contact.addressValue": "Bulevar kralja Aleksandra 123, Belgrade",
+    "contact.addressValue": "Milutina Milankovića 1i, Navigator II",
     "contact.hours": "Working Hours",
-    "contact.hoursValue": "Monday - Sunday: 08:00 - 22:00",
+    "contact.hoursValue": "Monday - Friday: 09:00 - 17:00",
     "contact.location": "Our Location",
   },
 } as const
