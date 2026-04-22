@@ -133,7 +133,7 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
           <>
             <span>/</span>
             <Link
-              href={`/products?category=${category.slug}`}
+              href={((s) => (s ? `/${s}` : "/products"))((category.slug ?? "").trim().toLowerCase())}
               className="hover:text-foreground whitespace-nowrap"
             >
               {locale === "en" ? category.nameEn : category.name}
@@ -155,7 +155,7 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
       {/* Product Image */}
       <div className="grid md:grid-cols-2 gap-6 md:gap-8">
         <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
-          {selectedDiscountPct && selectedDiscountPct > 0 && (
+          {selectedDiscountPct > 0 && (
             <Badge className="absolute top-3 right-3 md:top-4 md:right-4 z-10 bg-destructive text-destructive-foreground text-base md:text-lg px-2 py-1 md:px-3">
               -{selectedDiscountPct}%
             </Badge>
@@ -198,7 +198,7 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
                     : "hover:bg-muted"
                 )}
               >
-                {product.discount && product.discount > 0 && (
+                {(product.discount ?? 0) > 0 && (
                   <div className="absolute -top-1 -right-1 z-10 pointer-events-none">
                     <div className="relative">
                       <span className="bg-destructive text-destructive-foreground text-[10px] md:text-xs font-bold px-2 py-1 rounded-md shadow-sm">
@@ -241,7 +241,7 @@ export function ProductDetail({ product, category }: ProductDetailProps) {
                         : "hover:bg-muted"
                     )}
                   >
-                    {v.discount && v.discount > 0 && (
+                    {(v.discount ?? 0) > 0 && (
                       <div className="absolute -top-1 -right-1 z-10 pointer-events-none">
                         <div className="relative">
                           <span className="bg-destructive text-destructive-foreground text-[10px] md:text-xs font-bold px-2 py-1 rounded-md shadow-sm">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, usePathname } from "next/navigation";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,7 +21,15 @@ import { fetchCategories, fetchProductsWithVariations } from "@/lib/supabase";
 
 export default function ProductsPage() {
   const searchParams = useSearchParams();
-  const categoryParam = searchParams.get("category");
+  const pathname = usePathname();
+  // When the clean URL rewrite is used (e.g. /kancelarijski-materijal → /products?category=…),
+  // the visible browser URL has no ?category param, so derive the slug from the pathname.
+  const slugFromPath =
+    pathname && pathname !== "/products" && !pathname.startsWith("/products/") &&
+    /^\/[a-z0-9][a-z0-9-]*$/.test(pathname)
+      ? pathname.slice(1)
+      : null;
+  const categoryParam = searchParams.get("category") ?? slugFromPath;
   const categoryIdParam = searchParams.get("categoryId");
   const discountParam = searchParams.get("discount");
   const { locale, t } = useLocale();
@@ -70,7 +78,8 @@ export default function ProductsPage() {
   // Backward compatibility: support legacy ?category=<slug>
   useEffect(() => {
     if (!categoryParam || selectedCategories.length > 0 || categories.length === 0) return;
-    const match = categories.find((c) => c.slug === categoryParam);
+    const needle = categoryParam.trim().toLowerCase();
+    const match = categories.find((c) => (c.slug ?? "").trim().toLowerCase() === needle);
     if (match) setSelectedCategories([match.id]);
   }, [categoryParam, categories, selectedCategories.length]);
 

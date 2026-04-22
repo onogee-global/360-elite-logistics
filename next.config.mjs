@@ -6,6 +6,14 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  async rewrites() {
+    return [
+      {
+        source: "/:slug([a-z0-9][a-z0-9-]*)",
+        destination: "/products?category=:slug",
+      },
+    ]
+  },
 }
 
 export default nextConfig
