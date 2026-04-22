@@ -349,7 +349,7 @@ export default function HomePage() {
                   onClick={() => {
                     // Show a quick ripple animation on mobile/small screens, then navigate
                     setTapCategoryId(category.id);
-                    const to = `/products?categoryId=${category.id}`;
+                    const to = `/products?category=${category.slug}`;
                     if (
                       typeof window !== "undefined" &&
                       window.innerWidth < 640
